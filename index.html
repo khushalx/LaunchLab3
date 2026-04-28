@@ -85,48 +85,62 @@
           <label class="mobile-more-stats" for="mobileStatsToggle">▼ More Stats</label>
           <section class="stats-bar" aria-label="Current startup stats">
             <article class="stat-pill week-pill">
-              <span>Week</span>
+              <span title="Week"><i>📅</i><em>Week</em></span>
               <strong id="weekNumber">1</strong>
             </article>
-            <article class="stat-pill">
-              <span>Users</span>
+            <article id="usersStatPill" class="stat-pill">
+              <span title="Users"><i>👥</i><em>Users</em></span>
               <strong id="usersStat">10</strong>
             </article>
-            <article class="stat-pill">
-              <span>Revenue</span>
-              <strong id="revenueStat">$0</strong>
-            </article>
-            <article class="stat-pill">
-              <span>Cash</span>
+            <article id="cashStatPill" class="stat-pill">
+              <span title="Cash"><i>💰</i><em>Cash</em></span>
               <strong id="cashStat">$5K</strong>
             </article>
-            <article id="runwayStatPill" class="stat-pill runway-pill">
-              <span>Runway <button class="help-tip" type="button" aria-label="Runway: how many weeks you can survive with current cash.">?</button></span>
-              <strong id="runwayStat">14w</strong>
+            <article id="revenueStatPill" class="stat-pill">
+              <span title="Revenue"><i>💵</i><em>Revenue</em></span>
+              <strong id="revenueStat">$0</strong>
             </article>
-            <article class="stat-pill">
-              <span>Rep</span>
-              <strong id="reputationStat">70</strong>
-            </article>
-            <article class="stat-pill optional-pill">
-              <span>Growth</span>
-              <strong id="growthStat">0%</strong>
-            </article>
-            <article class="stat-pill optional-pill">
-              <span>Burn <button class="help-tip" type="button" aria-label="Burn: weekly operating cost from team, product, marketing, and optional spend.">?</button></span>
+            <article id="burnStatPill" class="stat-pill optional-pill">
+              <span title="Burn"><i>🔥</i><em>Burn</em><button class="help-tip" type="button" aria-label="Burn: weekly operating cost from team, product, marketing, and optional spend.">?</button></span>
               <strong id="burnStat">$350</strong>
             </article>
-            <article class="stat-pill streak-pill">
-              <span>Streak</span>
+            <article id="runwayStatPill" class="stat-pill runway-pill">
+              <span title="Runway"><i>⏳</i><em>Runway</em><button class="help-tip" type="button" aria-label="Runway: how many weeks you can survive with current cash.">?</button></span>
+              <strong id="runwayStat">14w</strong>
+            </article>
+            <article id="reputationStatPill" class="stat-pill">
+              <span title="Reputation"><i>⭐</i><em>Rep</em></span>
+              <strong id="reputationStat">70</strong>
+            </article>
+            <article id="productStatPill" class="stat-pill">
+              <span title="Product"><i>🧩</i><em>Product</em></span>
+              <strong id="qualityStat">55</strong>
+            </article>
+            <article id="growthStatPill" class="stat-pill optional-pill">
+              <span title="Growth"><i>📈</i><em>Growth</em></span>
+              <strong id="growthStat">0%</strong>
+            </article>
+            <article id="streakStatPill" class="stat-pill streak-pill">
+              <span title="Streak"><i>🔥</i><em>Streak</em></span>
               <strong id="streakStat">0</strong>
             </article>
           </section>
-          <button id="themeButton" class="icon-button" type="button" aria-pressed="false">Light</button>
-          <button id="howToPlayButton" class="icon-button" type="button">How to Play</button>
           <button id="saveRunButton" class="icon-button" type="button">Save Run</button>
           <button id="newRunButton" class="icon-button" type="button">New Run</button>
-          <button id="muteButton" class="icon-button" type="button" aria-pressed="false">Sound on</button>
-          <button id="restartButton" class="ghost-button" type="button">Restart</button>
+          <div class="settings-menu">
+            <button id="settingsButton" class="settings-button" type="button" aria-expanded="false" aria-label="Open settings">⚙️</button>
+            <div id="settingsPanel" class="settings-panel is-hidden" aria-label="Settings menu">
+              <button id="themeButton" class="icon-button" type="button" aria-pressed="false">Light</button>
+              <button id="howToPlayButton" class="icon-button" type="button">How to Play</button>
+              <button id="muteButton" class="icon-button" type="button" aria-pressed="false">Sound on</button>
+              <button id="restartButton" class="ghost-button" type="button">Restart</button>
+              <div class="burn-source-actions settings-cost-controls">
+                <button id="stopMarketingButton" type="button">Stop Marketing</button>
+                <button id="pauseDevelopmentButton" type="button">Pause Dev</button>
+                <button id="cutCostsButton" type="button">Cut Costs</button>
+              </div>
+            </div>
+          </div>
         </header>
 
         <section class="sim-layout">
@@ -140,14 +154,16 @@
             </div>
 
             <nav class="dossier-nav" aria-label="Dossier sections">
-              <button class="active" type="button" data-view="overview">Overview</button>
-              <button type="button" data-view="product">Product</button>
-              <button type="button" data-view="timeline">Timeline</button>
-              <button type="button" data-view="team">Team</button>
-              <button type="button" data-view="market">Market</button>
-              <button type="button" data-view="runs">Runs</button>
-              <button type="button" data-view="achievements">Achievements</button>
+              <button class="active" type="button" data-view="overview" data-icon="🏠" title="Overview">Overview</button>
+              <button type="button" data-view="product" data-icon="🧩" title="Product">Product</button>
+              <button type="button" data-view="timeline" data-icon="📊" title="Timeline">Timeline</button>
+              <button type="button" data-view="team" data-icon="👥" title="Team">Team</button>
+              <button type="button" data-view="market" data-icon="📈" title="Market">Market</button>
+              <button type="button" data-view="runs" data-icon="▶️" title="Runs">Runs</button>
+              <button type="button" data-view="achievements" data-icon="🏆" title="Achievements">Achievements</button>
             </nav>
+
+            <button id="sidebarSettingsButton" class="sidebar-settings-toggle" type="button" data-icon="⚙️" title="Settings">Settings</button>
 
             <section class="profile-card" aria-label="Startup profile">
               <p>Startup profile</p>
@@ -654,11 +670,6 @@
                 <div><dt>Marketing</dt><dd id="burnMarketingSource">$0</dd></div>
                 <div><dt>Optional</dt><dd id="burnOptionalSource">$0</dd></div>
               </dl>
-              <div class="burn-source-actions">
-                <button id="stopMarketingButton" type="button">Stop Marketing</button>
-                <button id="pauseDevelopmentButton" type="button">Pause Dev</button>
-                <button id="cutCostsButton" type="button">Cut Costs</button>
-              </div>
               <p id="burnSourceNote">Burn comes from visible operating choices.</p>
             </section>
 
