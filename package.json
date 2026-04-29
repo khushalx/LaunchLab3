@@ -1,0 +1,28 @@
+{
+  "name": "launchlab3",
+  "version": "1.0.0",
+  "description": "LaunchLab - Interactive founder simulation game",
+  "main": "app.js",
+  "scripts": {
+    "dev": "python3 -m http.server 8080",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/khushalx/LaunchLab3.git"
+  },
+  "keywords": [
+    "simulation",
+    "game",
+    "startup"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/khushalx/LaunchLab3/issues"
+  },
+  "homepage": "https://github.com/khushalx/LaunchLab3#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}
