@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&amp;family=Rajdhani:wght@600;700&amp;family=Share+Tech+Mono&amp;display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=1.2.1" />
   </head>
   <body>
     <main class="app-shell">
@@ -195,6 +195,7 @@
               <button type="button" data-view="achievements" data-icon="🏆" title="Achievements">Achievements</button>
             </nav>
 
+            <button id="mobileMoreButton" class="mobile-more-button" type="button" aria-label="More" aria-expanded="false" aria-controls="mobileMorePanel" data-icon="•••">More</button>
             <button id="sidebarSettingsButton" class="sidebar-settings-toggle" type="button" data-icon="⚙️" title="Settings">Settings</button>
 
             <section class="profile-card" aria-label="Startup profile">
@@ -747,6 +748,27 @@
           </aside>
         </section>
 
+        <div id="mobileMoreBackdrop" class="mobile-more-backdrop is-hidden" aria-hidden="true"></div>
+        <aside id="mobileMorePanel" class="mobile-more-panel is-hidden" role="dialog" aria-modal="true" aria-labelledby="mobileMoreTitle">
+          <header>
+            <div>
+              <span>LaunchLab</span>
+              <h2 id="mobileMoreTitle">More</h2>
+            </div>
+            <button id="mobileMoreCloseButton" type="button" aria-label="Close more menu">×</button>
+          </header>
+          <nav class="mobile-more-links" aria-label="More game sections">
+            <button type="button" data-mobile-view="timeline"><span aria-hidden="true">📊</span><strong>Timeline</strong><small>Review every decision</small></button>
+            <button type="button" data-mobile-view="runs"><span aria-hidden="true">▶️</span><strong>Saved runs</strong><small>Compare past companies</small></button>
+            <button type="button" data-mobile-view="achievements"><span aria-hidden="true">🏆</span><strong>Achievements</strong><small>Track your milestones</small></button>
+          </nav>
+          <div class="mobile-more-actions">
+            <button id="mobileSaveRunButton" type="button"><span aria-hidden="true">↥</span> Save run</button>
+            <button id="mobileSettingsShortcut" type="button"><span aria-hidden="true">⚙️</span> Settings</button>
+            <button id="mobileNewRunButton" type="button"><span aria-hidden="true">＋</span> New run</button>
+          </div>
+        </aside>
+
         <div id="resultToast" class="result-toast is-hidden" aria-live="polite"></div>
         <div id="achievementToast" class="achievement-toast is-hidden" aria-live="polite"></div>
       </section>
@@ -846,6 +868,6 @@
       </article>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=1.2.1"></script>
   </body>
 </html>

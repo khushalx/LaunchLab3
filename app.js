@@ -13,6 +13,14 @@ const themeButton = document.querySelector("#themeButton");
 const settingsButton = document.querySelector("#settingsButton");
 const sidebarSettingsButton = document.querySelector("#sidebarSettingsButton");
 const settingsPanel = document.querySelector("#settingsPanel");
+const mobileMoreButton = document.querySelector("#mobileMoreButton");
+const mobileMorePanel = document.querySelector("#mobileMorePanel");
+const mobileMoreBackdrop = document.querySelector("#mobileMoreBackdrop");
+const mobileMoreCloseButton = document.querySelector("#mobileMoreCloseButton");
+const mobileMoreViewButtons = document.querySelectorAll("[data-mobile-view]");
+const mobileSaveRunButton = document.querySelector("#mobileSaveRunButton");
+const mobileSettingsShortcut = document.querySelector("#mobileSettingsShortcut");
+const mobileNewRunButton = document.querySelector("#mobileNewRunButton");
 const howToPlayButton = document.querySelector("#howToPlayButton");
 const muteButton = document.querySelector("#muteButton");
 const onboardingOverlay = document.querySelector("#onboardingOverlay");
@@ -5585,7 +5593,13 @@ function setCenterView(view) {
   achievementsView.classList.toggle("is-hidden", view !== "achievements");
   dossierNavButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.view === view);
+    if (button.dataset.view === view) {
+      button.setAttribute("aria-current", "page");
+    } else {
+      button.removeAttribute("aria-current");
+    }
   });
+  syncMobileNavigation(view);
   if (view === "timeline") {
     renderTimelineView();
   }
@@ -6449,6 +6463,8 @@ function updateSystemActionLock() {
   }
   if (saveRunButton) saveRunButton.disabled = isAdvancingWeek || isArchiveOnlyView;
   if (newRunButton) newRunButton.disabled = isAdvancingWeek;
+  if (mobileSaveRunButton) mobileSaveRunButton.disabled = isAdvancingWeek || isArchiveOnlyView;
+  if (mobileNewRunButton) mobileNewRunButton.disabled = isAdvancingWeek;
   if (restartButton) restartButton.disabled = isAdvancingWeek;
   if (locked) {
     simulationPage.querySelectorAll(
@@ -6485,6 +6501,7 @@ function renderDecisionResult() {
     continueWeekButton.textContent = "Continue";
     return;
   }
+  const wasHidden = decisionResultPanel.classList.contains("is-hidden");
   decisionResultPanel.classList.remove("is-hidden");
   decisionResultTitle.textContent = pendingResolution.decision;
   decisionResultChanges.innerHTML = formatDelta(pendingResolution.delta);
@@ -6492,6 +6509,12 @@ function renderDecisionResult() {
   continueWeekButton.textContent = pendingResolution.ending
     ? "View ending"
     : `Continue to Week ${pendingResolution.continueWeek}`;
+  if (wasHidden && typeof window.matchMedia === "function" && window.matchMedia("(max-width: 780px)").matches) {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.requestAnimationFrame(() => {
+      decisionResultPanel.scrollIntoView?.({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+    });
+  }
 }
 
 function renderGuidedTip() {
@@ -6824,6 +6847,57 @@ function closeSettingsMenu() {
   settingsButton.setAttribute("aria-expanded", "false");
 }
 
+function syncMobileNavigation(view = activeCenterView) {
+  const secondaryViews = ["timeline", "runs", "achievements"];
+  const moreIsActive = secondaryViews.includes(view);
+  mobileMoreButton?.classList.toggle("active", moreIsActive);
+  if (moreIsActive) {
+    mobileMoreButton?.setAttribute("aria-current", "page");
+  } else {
+    mobileMoreButton?.removeAttribute("aria-current");
+  }
+  mobileMoreViewButtons.forEach((button) => {
+    const isCurrent = button.dataset.mobileView === view;
+    button.classList.toggle("active", isCurrent);
+    if (isCurrent) {
+      button.setAttribute("aria-current", "page");
+    } else {
+      button.removeAttribute("aria-current");
+    }
+  });
+}
+
+function openMobileMoreMenu() {
+  if (!mobileMorePanel || !mobileMoreBackdrop || !mobileMoreButton) return;
+  closeSettingsMenu();
+  mobileMorePanel.classList.remove("is-hidden");
+  mobileMoreBackdrop.classList.remove("is-hidden");
+  mobileMoreBackdrop.setAttribute("aria-hidden", "false");
+  mobileMoreButton.setAttribute("aria-expanded", "true");
+  document.body.classList.add("mobile-menu-open");
+  mobileMoreCloseButton?.focus();
+}
+
+function closeMobileMoreMenu({ restoreFocus = false } = {}) {
+  if (!mobileMorePanel || !mobileMoreBackdrop || !mobileMoreButton) return;
+  const wasOpen = !mobileMorePanel.classList.contains("is-hidden");
+  mobileMorePanel.classList.add("is-hidden");
+  mobileMoreBackdrop.classList.add("is-hidden");
+  mobileMoreBackdrop.setAttribute("aria-hidden", "true");
+  mobileMoreButton.setAttribute("aria-expanded", "false");
+  document.body.classList.remove("mobile-menu-open");
+  if (restoreFocus && wasOpen) mobileMoreButton.focus();
+}
+
+function toggleMobileMoreMenu() {
+  if (!mobileMorePanel) return;
+  if (mobileMorePanel.classList.contains("is-hidden")) {
+    openMobileMoreMenu();
+  } else {
+    closeMobileMoreMenu({ restoreFocus: true });
+  }
+}
+
 function hasSeenOnboarding() {
   try {
     return localStorage.getItem(onboardingStorageKey) === "true";
@@ -6934,6 +7008,7 @@ function resetToLanding() {
   endingPage.classList.add("is-hidden");
   newRunOverlay.classList.add("is-hidden");
   closeSettingsMenu();
+  closeMobileMoreMenu();
   landingPage.classList.remove("is-hidden");
   startupForm.reset();
   renderContinueRunPanel();
@@ -6951,6 +7026,32 @@ dossierNavButtons.forEach((button) => {
       setCenterView(button.dataset.view);
     }
   });
+});
+
+mobileMoreButton?.addEventListener("click", toggleMobileMoreMenu);
+mobileMoreCloseButton?.addEventListener("click", () => closeMobileMoreMenu({ restoreFocus: true }));
+mobileMoreBackdrop?.addEventListener("click", () => closeMobileMoreMenu({ restoreFocus: true }));
+mobileMoreViewButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const view = button.dataset.mobileView;
+    if (!view) return;
+    closeMobileMoreMenu();
+    setCenterView(view);
+  });
+});
+mobileSaveRunButton?.addEventListener("click", () => {
+  closeMobileMoreMenu();
+  manualSaveRun();
+});
+mobileNewRunButton?.addEventListener("click", () => {
+  closeMobileMoreMenu();
+  openNewRunConfirm();
+});
+mobileSettingsShortcut?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  closeMobileMoreMenu();
+  toggleSettingsMenu();
+  settingsButton.focus();
 });
 
 timelineFilterButtons.forEach((button) => {
@@ -7049,6 +7150,7 @@ viewRunHistoryButton.addEventListener("click", viewRunHistoryFromEnding);
 themeButton.addEventListener("click", toggleTheme);
 settingsButton.addEventListener("click", (event) => {
   event.stopPropagation();
+  closeMobileMoreMenu();
   toggleSettingsMenu();
 });
 sidebarSettingsButton.addEventListener("click", (event) => {
@@ -7077,7 +7179,13 @@ document.addEventListener("click", (event) => {
     closeSettingsMenu();
   }
 });
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && mobileMorePanel && !mobileMorePanel.classList.contains("is-hidden")) {
+    closeMobileMoreMenu({ restoreFocus: true });
+  }
+});
 
 setTheme("dark");
 renderContinueRunPanel();
+syncMobileNavigation("overview");
 showOnboardingOnFirstVisit();

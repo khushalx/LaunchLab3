@@ -8463,3 +8463,876 @@ textarea:focus-visible,
     transition: none;
   }
 }
+
+/* === MOBILE PLAY EXPERIENCE — AUTHORITATIVE === */
+.mobile-more-button,
+.mobile-more-backdrop,
+.mobile-more-panel {
+  display: none;
+}
+
+@media (max-width: 780px) {
+  html,
+  body,
+  .app-shell {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Mobile launcher: one clear idea, one clear form. */
+  .landing-screen {
+    min-height: 100svh;
+    align-content: start;
+    gap: 10px;
+    padding:
+      max(10px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      max(14px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+  }
+
+  .brand-panel {
+    display: block;
+    min-height: 0;
+    border-radius: 16px;
+    padding: 24px 20px 20px;
+  }
+
+  .brand-mark {
+    position: relative;
+    top: auto;
+    left: auto;
+    display: flex;
+    gap: 5px;
+    width: max-content;
+    margin-bottom: 22px;
+    transform: none;
+  }
+
+  .brand-mark span,
+  .brand-mark span:nth-child(2),
+  .brand-mark span:nth-child(3) {
+    width: 7px;
+    height: 28px;
+    border-radius: 999px;
+  }
+
+  .brand-mark span:nth-child(2) {
+    height: 38px;
+  }
+
+  .brand-mark span:nth-child(3) {
+    height: 20px;
+  }
+
+  .brand-panel .eyebrow {
+    margin-bottom: 8px;
+    font-size: 0.68rem;
+  }
+
+  .brand-panel h1 {
+    margin-bottom: 12px;
+    font-size: clamp(3rem, 15vw, 4.25rem);
+    line-height: 0.95;
+  }
+
+  .brand-panel .intro {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .continue-run-panel {
+    gap: 12px;
+    margin-top: 20px;
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .continue-run-copy p {
+    font-size: 0.56rem;
+  }
+
+  #continueSavedRunButton {
+    min-height: 48px;
+  }
+
+  .setup-card {
+    gap: 12px;
+    border-radius: 16px;
+    padding: 52px 16px 18px;
+  }
+
+  .setup-card::before {
+    top: 22px;
+    left: 17px;
+    font-size: 0.67rem;
+  }
+
+  .setup-card label {
+    gap: 6px;
+    margin: 0;
+  }
+
+  .setup-card label > span {
+    font-size: 0.76rem;
+  }
+
+  .setup-card input,
+  .setup-card select {
+    min-height: 49px;
+    font-size: 0.9rem;
+  }
+
+  .setup-card .primary-button {
+    min-height: 52px;
+  }
+
+  /* Two-row command HUD: company + stage, then five essential stats. */
+  .game-hud {
+    grid-template-columns: minmax(0, 1fr) minmax(108px, 0.72fr) 40px;
+    grid-template-rows: 42px 46px;
+    gap: 6px 8px;
+    min-height: 0;
+    padding:
+      max(6px, env(safe-area-inset-top))
+      max(9px, env(safe-area-inset-right))
+      7px
+      max(9px, env(safe-area-inset-left));
+  }
+
+  .game-title {
+    grid-column: 1;
+    grid-row: 1;
+    padding: 0;
+  }
+
+  .game-title h1 {
+    overflow: hidden;
+    font-size: 0.96rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .company-stage-strip {
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 4px;
+    min-width: 0;
+    min-height: 34px;
+    gap: 6px;
+    border: 0;
+    border-left: 1px solid var(--simple-line);
+    padding: 2px 0 2px 10px;
+  }
+
+  .company-stage-heading {
+    min-width: 0;
+  }
+
+  .company-stage-heading span,
+  .company-valuation-line {
+    display: none;
+  }
+
+  .company-stage-heading strong {
+    display: block;
+    overflow: hidden;
+    margin: 0;
+    font-size: 0.69rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .company-stage-meter {
+    grid-column: 1;
+    height: 4px;
+  }
+
+  #saveRunButton,
+  #newRunButton {
+    display: none !important;
+  }
+
+  .settings-menu {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .settings-button {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+  }
+
+  .stats-bar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0;
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  #burnStatPill,
+  #revenueStatPill {
+    display: none !important;
+  }
+
+  .stat-pill {
+    min-width: 0;
+    min-height: 44px;
+    padding: 5px 4px;
+    scroll-snap-align: none;
+  }
+
+  .stat-pill span {
+    overflow: hidden;
+    font-size: 0.52rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .stat-pill strong {
+    font-size: 0.76rem;
+  }
+
+  .settings-panel {
+    top: calc(max(6px, env(safe-area-inset-top)) + 46px);
+    right: max(8px, env(safe-area-inset-right));
+    width: min(300px, calc(100vw - 16px));
+    max-height: calc(100dvh - 130px - env(safe-area-inset-bottom));
+    padding: 10px;
+    overscroll-behavior: contain;
+  }
+
+  .settings-panel .icon-button,
+  .settings-panel .ghost-button,
+  .settings-panel .settings-cost-controls button,
+  #aiEventsButton {
+    min-height: 44px;
+  }
+
+  /* The playfield owns scrolling; the browser page itself stays stable. */
+  .sim-layout,
+  .sim-layout:has(.left-sidebar:hover),
+  .sim-layout:has(.left-sidebar:focus-within),
+  .simulation-screen[data-active-view="product"] .sim-layout,
+  .simulation-screen[data-active-view="product"] .sim-layout:has(.left-sidebar:hover),
+  .simulation-screen[data-active-view="product"] .sim-layout:has(.left-sidebar:focus-within) {
+    display: block;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .center-stage {
+    height: 100%;
+    padding: 10px 10px calc(75px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .center-view,
+  .timeline-view,
+  .team-view,
+  .product-view,
+  .market-view,
+  .achievements-view,
+  .runs-view {
+    width: 100%;
+    gap: 10px;
+  }
+
+  /* Five calm bottom destinations. Secondary reports live in More. */
+  .left-sidebar {
+    height: calc(64px + env(safe-area-inset-bottom));
+    gap: 2px;
+    padding: 4px 5px env(safe-area-inset-bottom);
+    overflow: hidden;
+    background: color-mix(in srgb, var(--simple-surface) 96%, transparent);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .dossier-nav {
+    flex: 4 1 0;
+    gap: 1px;
+    overflow: hidden;
+    scroll-snap-type: none;
+  }
+
+  .dossier-nav button[data-view="timeline"],
+  .dossier-nav button[data-view="runs"],
+  .dossier-nav button[data-view="achievements"] {
+    display: none !important;
+  }
+
+  .dossier-nav button,
+  .left-sidebar:hover .dossier-nav button,
+  .left-sidebar:focus-within .dossier-nav button,
+  .mobile-more-button {
+    min-width: 0;
+    min-height: 56px;
+    flex: 1 1 0;
+    border: 0;
+    border-radius: 8px;
+    padding: 3px 1px;
+    background: transparent;
+    color: var(--simple-muted);
+    font-size: 0.51rem;
+    font-weight: 650;
+    text-align: center;
+  }
+
+  .dossier-nav button::before,
+  .mobile-more-button::before {
+    content: attr(data-icon);
+    display: grid;
+    width: 27px;
+    height: 27px;
+    margin: 0 auto 3px;
+    place-items: center;
+    border-radius: 7px;
+    font-size: 0.9rem;
+  }
+
+  .dossier-nav button.active,
+  .mobile-more-button.active,
+  .mobile-more-button[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--simple-accent) 13%, transparent);
+    color: var(--simple-accent);
+  }
+
+  .mobile-more-button {
+    display: block;
+    flex: 1 1 0;
+  }
+
+  .sidebar-settings-toggle {
+    display: none !important;
+  }
+
+  /* More is a real mobile sheet, not another squeezed navigation row. */
+  .mobile-more-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 94;
+    display: block;
+    background: rgba(3, 6, 12, 0.58);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+  }
+
+  .mobile-more-panel {
+    position: fixed;
+    right: max(8px, env(safe-area-inset-right));
+    bottom: calc(70px + env(safe-area-inset-bottom));
+    left: max(8px, env(safe-area-inset-left));
+    z-index: 95;
+    display: grid;
+    gap: 13px;
+    max-height: min(68dvh, 560px);
+    overflow-y: auto;
+    border: 1px solid var(--simple-line);
+    border-radius: 18px;
+    padding: 16px;
+    background: var(--simple-surface);
+    box-shadow: 0 24px 56px rgba(0, 0, 0, 0.42);
+    overscroll-behavior: contain;
+  }
+
+  .mobile-more-panel > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .mobile-more-panel > header span {
+    color: var(--simple-accent);
+    font-size: 0.63rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .mobile-more-panel h2 {
+    margin: 2px 0 0;
+    color: var(--simple-text);
+    font-size: 1.2rem;
+  }
+
+  #mobileMoreCloseButton {
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+    border: 1px solid var(--simple-line);
+    border-radius: 50%;
+    background: var(--simple-surface-2);
+    color: var(--simple-text);
+    font-size: 1.35rem;
+  }
+
+  .mobile-more-links {
+    display: grid;
+    gap: 7px;
+  }
+
+  .mobile-more-links button {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 2px 10px;
+    min-height: 58px;
+    align-items: center;
+    border: 1px solid var(--simple-line);
+    border-radius: 10px;
+    padding: 9px 11px;
+    background: var(--simple-surface-2);
+    color: var(--simple-text);
+    text-align: left;
+  }
+
+  .mobile-more-links button.active {
+    border-color: var(--simple-accent);
+    background: color-mix(in srgb, var(--simple-accent) 10%, var(--simple-surface-2));
+  }
+
+  .mobile-more-links button > span {
+    grid-row: 1 / span 2;
+    font-size: 1.05rem;
+    text-align: center;
+  }
+
+  .mobile-more-links strong {
+    font-size: 0.82rem;
+  }
+
+  .mobile-more-links small {
+    color: var(--simple-muted);
+    font-size: 0.68rem;
+  }
+
+  .mobile-more-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .mobile-more-actions button {
+    min-height: 46px;
+    border: 1px solid var(--simple-line);
+    border-radius: 9px;
+    padding: 6px;
+    background: transparent;
+    color: var(--simple-muted);
+    font-size: 0.68rem;
+    font-weight: 650;
+  }
+
+  .mobile-more-actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.46;
+  }
+
+  /* Weekly choice remains the largest and first surface. */
+  .decision-panel {
+    border-radius: 12px;
+    padding: 15px 13px;
+  }
+
+  .decision-topline {
+    margin-bottom: 10px;
+  }
+
+  .decision-panel h2 {
+    margin-bottom: 7px;
+    font-size: clamp(1.25rem, 6vw, 1.55rem);
+    line-height: 1.18;
+  }
+
+  .decision-panel > p {
+    margin-bottom: 11px;
+    font-size: 0.83rem;
+    line-height: 1.45;
+  }
+
+  .objective-card {
+    gap: 7px;
+    margin: 9px 0 5px;
+    padding: 9px 10px;
+  }
+
+  .objective-copy h3 {
+    font-size: 0.82rem;
+  }
+
+  .objective-progress > div:first-child {
+    align-items: center;
+  }
+
+  #objectiveReward {
+    max-width: 58%;
+    text-align: right;
+  }
+
+  .insight-card {
+    display: block;
+    margin-top: 5px;
+    padding: 7px 1px;
+  }
+
+  .insight-card strong {
+    display: none;
+  }
+
+  .insight-card span {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .guided-tip {
+    display: none !important;
+  }
+
+  .decision-list,
+  #overviewView .decision-list {
+    gap: 7px;
+    margin-top: 10px;
+  }
+
+  .decision-button {
+    min-height: 76px;
+    padding: 10px;
+  }
+
+  .decision-button span {
+    font-size: 0.74rem;
+  }
+
+  .decision-button em {
+    font-size: 0.65rem;
+  }
+
+  .decision-result-panel #continueWeekButton {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  #overviewView:has(.decision-result-panel:not(.is-hidden)) {
+    padding-bottom: 170px;
+  }
+
+  /* Secondary screens collapse cleanly and share the playfield scroll. */
+  .timeline-view-header,
+  .team-view-header,
+  .product-view-header,
+  .market-view-header,
+  .achievements-view-header,
+  .runs-view-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    border-radius: 11px;
+    padding: 13px;
+  }
+
+  .timeline-view-header {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .timeline-filters,
+  .achievement-filter-group {
+    width: 100%;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    padding-bottom: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .timeline-filters::-webkit-scrollbar,
+  .achievement-filter-group::-webkit-scrollbar {
+    display: none;
+  }
+
+  .timeline-filters button,
+  .achievement-filter-group button {
+    flex: 0 0 auto;
+    min-height: 38px;
+  }
+
+  .team-overview-grid,
+  .product-overview-grid,
+  .market-overview-grid,
+  .achievement-overview-grid,
+  .timeline-summary-grid,
+  .best-runs-grid,
+  .simulation-screen[data-active-view="product"] .product-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .team-overview-grid article,
+  .product-overview-grid article,
+  .market-overview-grid article,
+  .achievement-overview-grid article,
+  .timeline-summary-grid article,
+  .best-runs-grid article {
+    min-width: 0;
+    padding: 10px;
+  }
+
+  .timeline-detail-list,
+  .achievement-grid,
+  .run-history-list {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .timeline-detail-list {
+    padding-left: 2px;
+  }
+
+  .timeline-detail-list::before,
+  .timeline-node {
+    display: none;
+  }
+
+  .timeline-detail-entry {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline-detail-entry article {
+    border-radius: 9px;
+    padding: 11px;
+  }
+
+  .product-lab-grid,
+  .market-lab-grid,
+  .market-strategy-grid,
+  .simulation-screen[data-active-view="product"] .product-lab-grid,
+  .create-product-form,
+  .run-compare-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .monetization-summary,
+  .simulation-screen[data-active-view="product"] .monetization-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .monetization-summary > p {
+    grid-column: 1 / -1;
+  }
+
+  .product-portfolio-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .product-portfolio-heading button,
+  .create-product-actions,
+  .create-product-actions button {
+    width: 100%;
+  }
+
+  .product-upgrade-card,
+  .market-action-card {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .product-upgrade-card button,
+  .market-action-card button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .team-role-row {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 8px 10px;
+    padding: 10px;
+  }
+
+  .role-icon {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .role-copy {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .role-count {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .role-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .role-actions button {
+    min-height: 43px;
+  }
+
+  .product-entity-bars {
+    grid-template-columns: 1fr;
+  }
+
+  .product-entity-actions button {
+    min-height: 42px;
+  }
+
+  .achievement-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .run-card-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .run-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .run-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .run-actions button {
+    min-height: 42px;
+  }
+
+  .onboarding-overlay {
+    padding:
+      max(10px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      max(10px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+  }
+
+  .onboarding-modal {
+    width: 100%;
+    max-height: calc(100dvh - 20px);
+    margin: auto;
+    overflow-y: auto;
+    border-radius: 15px;
+    padding: 18px;
+    overscroll-behavior: contain;
+  }
+
+  .promotion-toast,
+  .result-toast,
+  .achievement-toast {
+    right: 10px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    left: 10px;
+    width: auto;
+    max-width: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .game-hud {
+    grid-template-columns: minmax(0, 1fr) minmax(96px, 0.72fr) 38px;
+  }
+
+  .settings-button {
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+  }
+
+  .stat-pill {
+    padding-inline: 2px;
+  }
+
+  .mobile-more-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .mobile-more-actions button {
+    min-height: 44px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .primary-button,
+  .ghost-button,
+  .product-portfolio-heading button,
+  .create-product-actions button,
+  .product-entity-actions button,
+  .market-choice,
+  .timeline-filters button,
+  .achievement-filter-group button {
+    min-height: 44px;
+  }
+}
+
+/* Keep market choice copy in the content column instead of the icon column. */
+.market-choice > i {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.market-choice > strong {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.market-choice > span {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+@media (max-width: 780px) {
+  .settings-panel {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .settings-panel > *,
+  .settings-panel .icon-button,
+  .settings-panel .ghost-button,
+  .settings-panel .settings-cost-controls,
+  .settings-panel .settings-cost-controls button,
+  .settings-panel .ai-events-setting,
+  #howToPlayButton,
+  #aiEventsButton {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .settings-panel .ai-events-setting,
+  .settings-panel .settings-cost-controls {
+    grid-column: 1;
+  }
+
+  #themeButton,
+  #howToPlayButton,
+  #muteButton,
+  #restartButton {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .settings-panel .settings-cost-controls {
+    grid-template-columns: 1fr;
+  }
+}

@@ -271,7 +271,7 @@ The browser calls `POST /api/ai-event`; only `server.js` communicates with Groq.
 ### Requirements
 
 - Node.js **18 or newer**
-- A modern desktop browser
+- A modern desktop or mobile browser
 - No database, account, build tool, framework, or `npm install` step
 
 ### Recommended: local Node server
@@ -385,8 +385,8 @@ The included server is a thoughtful local-development proxy, not an authenticate
 | Local saves, archives, comparison, and achievements | Implemented |
 | Curated event engine | Implemented |
 | Optional Groq events | Implemented; requires a server-side key |
-| Desktop/laptop experience | Primary supported experience |
-| Mobile experience | Responsive and usable; still being refined |
+| Desktop/laptop experience | Fully supported |
+| Mobile experience | Fully supported with a compact HUD, touch navigation, and uncluttered responsive views |
 | Cloud accounts, sync, and multiplayer | Not included |
 
 ## Why this project exists

@@ -47,6 +47,7 @@ function createElement() {
     addEventListener() {},
     removeEventListener() {},
     setAttribute() {},
+    removeAttribute() {},
     getAttribute() { return null; },
     focus() {},
     reset() {},
