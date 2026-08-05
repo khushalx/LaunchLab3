@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="460" viewBox="0 0 1200 460" role="img" aria-labelledby="title desc">
+  <title id="title">LaunchLab — startup strategy simulation</title>
+  <desc id="desc">A dark LaunchLab banner showing startup metrics and the path from a garage startup to a business empire.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d1016"/>
+      <stop offset="1" stop-color="#171d2a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#78a6ff"/>
+      <stop offset="1" stop-color="#9d7cff"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#78a6ff" stop-opacity=".24"/>
+      <stop offset="1" stop-color="#9d7cff" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#8ca4c7" stroke-opacity=".06"/>
+    </pattern>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000" flood-opacity=".28"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="460" rx="28" fill="url(#bg)"/>
+  <rect width="1200" height="460" rx="28" fill="url(#grid)"/>
+  <circle cx="115" cy="70" r="240" fill="url(#glow)"/>
+  <circle cx="1080" cy="420" r="250" fill="#9d7cff" opacity=".06"/>
+
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">
+    <g transform="translate(66 64)">
+      <rect width="42" height="42" rx="12" fill="url(#accent)"/>
+      <path d="M13 29V13h5v11h12v5z" fill="#0d1016"/>
+      <text x="58" y="16" fill="#9fb5d8" font-size="12" font-weight="700" letter-spacing="2.4">BROWSER-BASED STARTUP STRATEGY SIMULATION</text>
+      <text x="0" y="114" fill="#f4f6f8" font-size="70" font-weight="800" letter-spacing="-3">LaunchLab</text>
+      <rect x="0" y="135" width="96" height="5" rx="2.5" fill="url(#accent)"/>
+      <text x="0" y="182" fill="#c3ccda" font-size="24" font-weight="500">Build the company. Survive the trade-offs.</text>
+      <text x="0" y="216" fill="#c3ccda" font-size="24" font-weight="500">Earn the empire.</text>
+      <text x="0" y="265" fill="#8290a6" font-size="15">Every week changes product, people, market, money — and what comes next.</text>
+    </g>
+
+    <g transform="translate(724 58)" filter="url(#shadow)">
+      <rect width="410" height="280" rx="20" fill="#171b24" stroke="#323b4c"/>
+      <text x="28" y="38" fill="#8290a6" font-size="11" font-weight="700" letter-spacing="1.8">COMPANY COMMAND CENTER</text>
+      <text x="28" y="72" fill="#f4f6f8" font-size="24" font-weight="750">Growth Company</text>
+      <text x="382" y="69" fill="#78a6ff" font-size="15" font-weight="700" text-anchor="end">WEEK 54</text>
+      <line x1="28" y1="91" x2="382" y2="91" stroke="#2a3240"/>
+
+      <g transform="translate(28 113)">
+        <rect width="168" height="64" rx="12" fill="#1e2430"/>
+        <text x="14" y="21" fill="#8290a6" font-size="10" font-weight="700" letter-spacing="1.2">CASH</text>
+        <text x="14" y="48" fill="#f4f6f8" font-size="23" font-weight="750">$842K</text>
+      </g>
+      <g transform="translate(214 113)">
+        <rect width="168" height="64" rx="12" fill="#1e2430"/>
+        <text x="14" y="21" fill="#8290a6" font-size="10" font-weight="700" letter-spacing="1.2">RUNWAY</text>
+        <text x="14" y="48" fill="#55c993" font-size="23" font-weight="750">18 weeks</text>
+      </g>
+      <g transform="translate(28 193)">
+        <rect width="168" height="58" rx="12" fill="#1e2430"/>
+        <text x="14" y="20" fill="#8290a6" font-size="10" font-weight="700" letter-spacing="1.2">WEEKLY FOCUS</text>
+        <text x="14" y="43" fill="#78a6ff" font-size="19" font-weight="750">2 / 4</text>
+        <rect x="72" y="31" width="78" height="6" rx="3" fill="#303949"/>
+        <rect x="72" y="31" width="39" height="6" rx="3" fill="#78a6ff"/>
+      </g>
+      <g transform="translate(214 193)">
+        <rect width="168" height="58" rx="12" fill="#1e2430"/>
+        <text x="14" y="20" fill="#8290a6" font-size="10" font-weight="700" letter-spacing="1.2">PRESSURE</text>
+        <text x="14" y="43" fill="#e7b85c" font-size="19" font-weight="750">47 · Managed</text>
+      </g>
+    </g>
+
+    <g transform="translate(66 386)">
+      <text x="0" y="0" fill="#6f7d92" font-size="10" font-weight="700" letter-spacing="1.3">GARAGE</text>
+      <text x="136" y="0" fill="#6f7d92" font-size="10" font-weight="700" letter-spacing="1.3">STARTUP</text>
+      <text x="280" y="0" fill="#6f7d92" font-size="10" font-weight="700" letter-spacing="1.3">SMALL</text>
+      <text x="410" y="0" fill="#78a6ff" font-size="10" font-weight="800" letter-spacing="1.3">GROWTH</text>
+      <text x="551" y="0" fill="#6f7d92" font-size="10" font-weight="700" letter-spacing="1.3">MID-SIZED</text>
+      <text x="717" y="0" fill="#6f7d92" font-size="10" font-weight="700" letter-spacing="1.3">LEADER</text>
+      <text x="858" y="0" fill="#9d7cff" font-size="10" font-weight="800" letter-spacing="1.3">EMPIRE</text>
+      <line x1="0" y1="24" x2="930" y2="24" stroke="#303949" stroke-width="4" stroke-linecap="round"/>
+      <line x1="0" y1="24" x2="443" y2="24" stroke="url(#accent)" stroke-width="4" stroke-linecap="round"/>
+      <g fill="#171d2a" stroke="#526078" stroke-width="3">
+        <circle cx="15" cy="24" r="7"/>
+        <circle cx="157" cy="24" r="7"/>
+        <circle cx="295" cy="24" r="7"/>
+        <circle cx="443" cy="24" r="9" fill="#78a6ff" stroke="#d9e5ff"/>
+        <circle cx="586" cy="24" r="7"/>
+        <circle cx="738" cy="24" r="7"/>
+        <circle cx="885" cy="24" r="7"/>
+      </g>
+      <text x="1068" y="28" fill="#8290a6" font-size="12" font-weight="700" text-anchor="end">NO FINISH LINE</text>
+    </g>
+  </g>
+</svg>

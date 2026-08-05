@@ -124,6 +124,8 @@ const runCompareResult = document.querySelector("#runCompareResult");
 const runHistoryList = document.querySelector("#runHistoryList");
 
 const weekNumber = document.querySelector("#weekNumber");
+const focusStat = document.querySelector("#focusStat");
+const focusStatPill = document.querySelector("#focusStatPill");
 const companyName = document.querySelector("#companyName");
 const companyContext = document.querySelector("#companyContext");
 const usersStat = document.querySelector("#usersStat");
@@ -156,9 +158,6 @@ const historyCount = document.querySelector("#historyCount");
 const insightText = document.querySelector("#insightText");
 const guidedTip = document.querySelector("#guidedTip");
 const decisionWeekLabel = document.querySelector("#decisionWeekLabel");
-const sidebarInitials = document.querySelector("#sidebarInitials");
-const sidebarStartupName = document.querySelector("#sidebarStartupName");
-const sidebarStartupSubtitle = document.querySelector("#sidebarStartupSubtitle");
 const profileName = document.querySelector("#profileName");
 const profileType = document.querySelector("#profileType");
 const profileStyle = document.querySelector("#profileStyle");
@@ -169,6 +168,7 @@ const burnTeamSource = document.querySelector("#burnTeamSource");
 const burnProductSource = document.querySelector("#burnProductSource");
 const burnMarketingSource = document.querySelector("#burnMarketingSource");
 const burnOptionalSource = document.querySelector("#burnOptionalSource");
+const burnScaleSource = document.querySelector("#burnScaleSource");
 const burnSourceNote = document.querySelector("#burnSourceNote");
 const stopMarketingButton = document.querySelector("#stopMarketingButton");
 const pauseDevelopmentButton = document.querySelector("#pauseDevelopmentButton");
@@ -190,9 +190,64 @@ const endingInsight = document.querySelector("#endingInsight");
 const endingScoreComparison = document.querySelector("#endingScoreComparison");
 const keyDecisionsList = document.querySelector("#keyDecisionsList");
 const endingAchievementsList = document.querySelector("#endingAchievementsList");
+const companyStageLabel = document.querySelector("#companyStageLabel");
+const companyValuationLabel = document.querySelector("#companyValuationLabel");
+const companyStageProgressBar = document.querySelector("#companyStageProgressBar");
+const companyNextStageLabel = document.querySelector("#companyNextStageLabel");
+const objectiveTitle = document.querySelector("#objectiveTitle");
+const objectiveText = document.querySelector("#objectiveText");
+const objectiveProgressBar = document.querySelector("#objectiveProgressBar");
+const objectiveReward = document.querySelector("#objectiveReward");
+const aiEventsButton = document.querySelector("#aiEventsButton");
+const aiStatusText = document.querySelector("#aiStatusText");
+const continueRunPanel = document.querySelector("#continueRunPanel");
+const continueSavedRunButton = document.querySelector("#continueSavedRunButton");
+const savedRunName = document.querySelector("#savedRunName");
+const savedRunMeta = document.querySelector("#savedRunMeta");
+const promotionToast = document.querySelector("#promotionToast");
 
-const MAX_WEEKS = 48;
-const MIN_SUCCESS_WEEK = 30;
+const SCORE_SURVIVAL_HORIZON = 52;
+const FULL_SAVE_VERSION = 2;
+const MAX_HISTORY_ENTRIES = 500;
+const AI_EVENT_COOLDOWN_WEEKS = 4;
+// Give the proxy enough time to return its own 12-second timeout response so
+// the browser does not abandon a Groq generation while it is still running.
+const AI_EVENT_TIMEOUT_MS = 13000;
+const COMPANY_VALUATION_MODEL_VERSION = 2;
+const BALANCE_MODEL_VERSION = 3;
+const MAX_GROWTH_RATE = 45;
+const MAX_SAFE_GAME_VALUE = 1_000_000_000_000_000;
+
+const companyStages = [
+  { id: "garage-startup", label: "Garage Startup", minValuation: 0 },
+  { id: "startup", label: "Startup", minValuation: 100000 },
+  { id: "small-company", label: "Small Company", minValuation: 1000000 },
+  { id: "growth-company", label: "Growth Company", minValuation: 5000000 },
+  { id: "mid-sized-company", label: "Mid-Sized Company", minValuation: 25000000 },
+  { id: "industry-leader", label: "Industry Leader", minValuation: 100000000 },
+  { id: "business-empire", label: "Business Empire", minValuation: 500000000 },
+];
+
+const stageOverhead = [0, 150, 750, 3500, 15000, 65000, 275000];
+const startupCogsRates = {
+  saas: 0.12,
+  marketplace: 0.16,
+  creator: 0.15,
+  agency: 0.35,
+  ai: 0.28,
+};
+
+// Each promotion must be earned across several healthy weeks. Valuation is a
+// useful signal, but it is deliberately not a win button anymore.
+const stageReadinessRequirements = [
+  null,
+  { holdWeeks: 2, users: 50, revenue: 500, resilience: 52, runway: 4, team: 1 },
+  { holdWeeks: 3, users: 750, revenue: 4000, resilience: 58, runway: 6, team: 2 },
+  { holdWeeks: 3, users: 5000, revenue: 20000, resilience: 64, runway: 7, team: 4 },
+  { holdWeeks: 4, users: 25000, revenue: 100000, resilience: 70, runway: 8, team: 6 },
+  { holdWeeks: 4, users: 100000, revenue: 400000, resilience: 76, runway: 10, team: 9 },
+  { holdWeeks: 5, users: 500000, revenue: 1500000, resilience: 82, runway: 12, team: 13 },
+];
 
 const founderStyles = {
   balanced: {
@@ -385,15 +440,6 @@ const productUpgrades = {
     impact: "-debt, +stability, slower growth",
     effects: { ux: 1, stability: 10, featureDepth: -1, technicalDebt: -14, quality: 5, reputation: 2, users: -2, growthRate: -3 },
   },
-};
-
-const productUpgradeIcons = {
-  onboarding: "compass",
-  bugs: "bug",
-  coreFeature: "puzzle",
-  uiux: "brush",
-  performance: "zap",
-  debt: "broom",
 };
 
 const pricingModels = {
@@ -602,7 +648,7 @@ const marketActions = {
     cost: 180,
     impact: "+pricing power, possible adoption friction",
     market: { demand: -1, pricingPower: 7, differentiation: 2, competitorPressure: 1 },
-    effects: { users: -2, revenue: 360, cash: 0, burnRate: 0, reputation: -1, productQuality: 0, growthRate: -1 },
+    effects: { users: -2, revenue: 0, cash: 0, burnRate: 0, reputation: -1, productQuality: 0, growthRate: -1 },
   },
   nicheCampaign: {
     label: "Launch niche campaign",
@@ -624,6 +670,7 @@ const achievementStorageKey = "launchlab_achievements";
 const onboardingStorageKey = "launchlab_onboarding_seen";
 const currentRunStorageKey = "launchlab_current_run";
 const runHistoryStorageKey = "launchlab_run_history";
+const fullGameStateStorageKey = "launchlab_game_state_v2";
 const achievementDefinitions = [
   { id: "first_100_users", title: "First 100 Users", description: "Reach 100 users in a run.", category: "Growth", rarity: "Common", reward: "Growth file opened." },
   { id: "first_1000_users", title: "First 1,000 Users", description: "Reach 1,000 users in a run.", category: "Growth", rarity: "Rare", reward: "Traction credibility unlocked." },
@@ -649,7 +696,7 @@ const achievementDefinitions = [
   { id: "reputation_collapse", title: "Reputation Collapse", description: "Fail because reputation reached zero.", category: "Failure", rarity: "Rare", reward: "Trust lesson archived." },
   { id: "traction_lost", title: "Traction Lost", description: "Fail because users reached zero.", category: "Failure", rarity: "Rare", reward: "Traction lesson archived." },
   { id: "bootstrapped_hero", title: "Bootstrapped Hero", description: "Survive 20 weeks with positive cash and no outside lifeline.", category: "Special", rarity: "Epic", reward: "Independence badge earned." },
-  { id: "unicorn_architect", title: "Unicorn Architect", description: "Reach the Unicorn ending.", category: "Special", rarity: "Legendary", reward: "Legendary founder rank progress." },
+  { id: "unicorn_architect", title: "Empire Architect", description: "Grow the company into a Business Empire.", category: "Special", rarity: "Legendary", reward: "Legendary founder rank progress." },
   { id: "comeback_story", title: "Comeback Story", description: "Recover from 4 or fewer runway weeks to 10+ weeks.", category: "Special", rarity: "Epic", reward: "Resilience report stamped." },
 ];
 
@@ -659,7 +706,7 @@ const founderRanks = [
   { title: "Rising Operator", percent: 28 },
   { title: "Startup Strategist", percent: 48 },
   { title: "Elite Founder", percent: 68 },
-  { title: "Unicorn Architect", percent: 88 },
+  { title: "Empire Architect", percent: 88 },
 ];
 
 const scenarios = [
@@ -1472,10 +1519,208 @@ const recoveryPrompts = [
   },
 ];
 
+const lateGameEvents = [
+  {
+    type: "event",
+    source: "curated",
+    minStageIndex: 1,
+    title: "An angel syndicate wants a board seat.",
+    text: "The capital could accelerate the company, but your earliest outside investors want influence over the roadmap.",
+    decisions: [
+      {
+        label: "Take the strategic capital",
+        hint: "More runway and reach, less independence.",
+        effects: { cash: 12500, revenue: 900, users: 80, burnRate: 180, reputation: 4, productQuality: -2, growthRate: 5 },
+        insight: "The round adds oxygen and credibility, while a new stakeholder starts shaping what gets built.",
+      },
+      {
+        label: "Negotiate observer rights only",
+        hint: "Smaller cheque, cleaner control.",
+        effects: { cash: 6500, revenue: 400, users: 35, burnRate: 80, reputation: 3, productQuality: 1, growthRate: 2 },
+        insight: "You accepted less capital to preserve decision-making control and a more coherent roadmap.",
+      },
+      {
+        label: "Stay bootstrapped",
+        hint: "Protect control, grow more carefully.",
+        effects: { cash: -350, revenue: 650, users: 18, burnRate: -90, reputation: 5, productQuality: 3, growthRate: -1 },
+        insight: "Independence remains intact, but every expansion now has to be funded by customers.",
+      },
+    ],
+  },
+  {
+    type: "event",
+    source: "curated",
+    minStageIndex: 2,
+    title: "Customer support is becoming a real department.",
+    text: "A growing customer base has turned founder support into an operational bottleneck. Response times and roadmap focus are slipping.",
+    immediate: { reputation: -2, productQuality: -1 },
+    decisions: [
+      {
+        label: "Build a dedicated support team",
+        hint: "Trust improves, payroll expands.",
+        effects: { users: 140, revenue: 1800, cash: -2400, burnRate: 420, reputation: 8, productQuality: 2, growthRate: 2 },
+        insight: "Support becomes a dependable function, improving retention at the cost of a meaningfully larger organization.",
+      },
+      {
+        label: "Automate the common requests",
+        hint: "Scalable service with implementation risk.",
+        effects: { users: 95, revenue: 1200, cash: -1800, burnRate: 120, reputation: 4, productQuality: 5, growthRate: 3 },
+        insight: "Automation removes repetitive load, though difficult customer problems still need human judgment.",
+      },
+      {
+        label: "Keep support founder-led",
+        hint: "Deep insight, serious focus cost.",
+        effects: { users: 45, revenue: 2100, cash: -600, burnRate: 40, reputation: 7, productQuality: -4, growthRate: -3 },
+        insight: "Customers feel heard, but leadership attention becomes the new constraint on company growth.",
+      },
+    ],
+  },
+  {
+    type: "event",
+    source: "curated",
+    minStageIndex: 3,
+    title: "A growth-round term sheet lands on your desk.",
+    text: "The offer can fund a much larger bet, but the valuation comes with aggressive targets and a preference stack.",
+    decisions: [
+      {
+        label: "Raise the full growth round",
+        hint: "Huge runway, much higher expectations.",
+        effects: { cash: 240000, revenue: 12000, users: 1800, burnRate: 2600, reputation: 8, productQuality: -3, growthRate: 8 },
+        insight: "The company can attack the market, but missing the new plan will make future choices much harsher.",
+      },
+      {
+        label: "Take a smaller extension",
+        hint: "Moderate runway, moderate pressure.",
+        effects: { cash: 95000, revenue: 7000, users: 800, burnRate: 900, reputation: 5, productQuality: 1, growthRate: 4 },
+        insight: "You bought room to grow without rebuilding the whole company around an investor forecast.",
+      },
+      {
+        label: "Decline and target profitability",
+        hint: "Slower expansion, stronger economics.",
+        effects: { cash: 9000, revenue: 18000, users: 250, burnRate: -700, reputation: 4, productQuality: 4, growthRate: -2 },
+        insight: "Growth cools while the business becomes more accountable to customer revenue than fundraising milestones.",
+      },
+    ],
+  },
+  {
+    type: "event",
+    source: "curated",
+    minStageIndex: 3,
+    title: "International demand arrives before the company is ready.",
+    text: "Customers across several regions want the product, but localization, payments, compliance, and support will all need investment.",
+    immediate: { users: 220, revenue: 2200, growthRate: 2 },
+    decisions: [
+      {
+        label: "Launch in three regions at once",
+        hint: "Maximum reach, maximum complexity.",
+        effects: { users: 3600, revenue: 28000, cash: -42000, burnRate: 1900, reputation: 3, productQuality: -5, growthRate: 9 },
+        insight: "The company gains global reach quickly, while operational and product complexity rise just as fast.",
+      },
+      {
+        label: "Choose one beachhead market",
+        hint: "Focused learning with controlled cost.",
+        effects: { users: 1400, revenue: 16000, cash: -15000, burnRate: 650, reputation: 6, productQuality: 2, growthRate: 5 },
+        insight: "A focused regional launch produces reusable knowledge without overwhelming every system at once.",
+      },
+      {
+        label: "License through local partners",
+        hint: "Lower control, faster distribution.",
+        effects: { users: 2100, revenue: 21000, cash: 5000, burnRate: 280, reputation: 1, productQuality: -2, growthRate: 6 },
+        insight: "Partners create distribution efficiently, but the customer experience is no longer entirely yours to control.",
+      },
+    ],
+  },
+  {
+    type: "event",
+    source: "curated",
+    minStageIndex: 4,
+    title: "The executive team disagrees on the next chapter.",
+    text: "Product, sales, and operations each see a different bottleneck. The disagreement is slowing decisions across the company.",
+    immediate: { growthRate: -2, reputation: -1 },
+    decisions: [
+      {
+        label: "Reorganize around business units",
+        hint: "More ownership, coordination overhead.",
+        effects: { users: 3800, revenue: 52000, cash: -36000, burnRate: 1600, reputation: 4, productQuality: 3, growthRate: 4 },
+        insight: "Clear ownership speeds local decisions, but the company now needs stronger coordination across units.",
+      },
+      {
+        label: "Set one company-wide priority",
+        hint: "Sharper focus, some leaders lose scope.",
+        effects: { users: 1900, revenue: 34000, cash: -9000, burnRate: -350, reputation: 6, productQuality: 5, growthRate: 2 },
+        insight: "A single priority restores execution clarity, even as some ambitious initiatives are deferred.",
+      },
+      {
+        label: "Replace the weakest executive",
+        hint: "Fresh leadership, morale shock.",
+        effects: { users: 900, revenue: 24000, cash: -18000, burnRate: 200, reputation: -3, productQuality: 2, growthRate: 3 },
+        insight: "The leadership gap is addressed, but the abrupt change shakes trust inside and outside the company.",
+      },
+    ],
+  },
+  {
+    type: "event",
+    source: "curated",
+    minStageIndex: 5,
+    title: "Regulators begin studying your market power.",
+    text: "Your company now shapes how the category operates. Policymakers, customers, and competitors are watching the same decisions very differently.",
+    immediate: { reputation: -4, growthRate: -2, burnRate: 500 },
+    decisions: [
+      {
+        label: "Adopt industry-leading safeguards",
+        hint: "Trust rises, margins tighten.",
+        effects: { users: 12000, revenue: 140000, cash: -220000, burnRate: 4200, reputation: 12, productQuality: 6, growthRate: 2 },
+        insight: "Stronger safeguards protect long-term legitimacy, though they add cost and slow some expansion plans.",
+      },
+      {
+        label: "Open key standards to the ecosystem",
+        hint: "Less lock-in, wider category influence.",
+        effects: { users: 26000, revenue: 90000, cash: -80000, burnRate: 1700, reputation: 9, productQuality: 2, growthRate: 5 },
+        insight: "Open standards reduce control over the moat while making your company central to a healthier ecosystem.",
+      },
+      {
+        label: "Defend the current model aggressively",
+        hint: "Protect revenue, risk public trust.",
+        effects: { users: -9000, revenue: 260000, cash: 150000, burnRate: 2800, reputation: -12, productQuality: -2, growthRate: -3 },
+        insight: "The company protects near-term economics, but regulatory and reputation risk become strategic liabilities.",
+      },
+    ],
+  },
+  {
+    type: "event",
+    source: "curated",
+    minStageIndex: 6,
+    title: "A landmark acquisition could reshape the empire.",
+    text: "A major competitor is willing to sell. The deal could create a new growth engine or bury the company under integration debt.",
+    decisions: [
+      {
+        label: "Acquire and integrate fully",
+        hint: "Massive scale, massive execution risk.",
+        effects: { users: 120000, revenue: 950000, cash: -4200000, burnRate: 18000, reputation: 4, productQuality: -7, growthRate: 7 },
+        insight: "The acquisition expands the empire overnight, while integration becomes the largest product and culture challenge yet.",
+      },
+      {
+        label: "Buy the technology and talent",
+        hint: "Focused assets, smaller market impact.",
+        effects: { users: 28000, revenue: 310000, cash: -1400000, burnRate: 7200, reputation: 6, productQuality: 7, growthRate: 4 },
+        insight: "A focused asset deal strengthens the product without inheriting the target's entire operating model.",
+      },
+      {
+        label: "Walk away and invest internally",
+        hint: "Protect culture, compound the core.",
+        effects: { users: 42000, revenue: 420000, cash: -650000, burnRate: 2400, reputation: 8, productQuality: 9, growthRate: 3 },
+        insight: "The company avoids integration chaos and directs capital toward the systems already producing durable advantage.",
+      },
+    ],
+  },
+];
+
 let startup = {};
 let state = {};
 let activePrompt = scenarios[0];
 let rng = Math.random;
+let rngSeedText = "";
+let rngCalls = 0;
 let turnsUntilEvent = 2;
 let audioMuted = false;
 let audioContext = null;
@@ -1488,6 +1733,491 @@ let activeAchievementRarity = "all";
 let activeAchievementStatus = "all";
 let currentTheme = "dark";
 let pendingResolution = null;
+let isAdvancingWeek = false;
+let isArchiveOnlyView = false;
+let weekAdvanceGeneration = 0;
+let activeAIRequestController = null;
+let promotionToastTimer = null;
+
+function createInitialValuationBreakdown() {
+  return {
+    operatingBase: 0,
+    cash: 0,
+    recurringRevenue: 0,
+    userTraction: 0,
+    revenueMultiple: 0,
+    observedWeeklyRevenue: 0,
+    smoothedWeeklyRevenue: 0,
+  };
+}
+
+function createInitialCompanyState() {
+  return {
+    valuation: 0,
+    stageIndex: 0,
+    highestStageIndex: 0,
+    stage: companyStages[0].id,
+    promotionCount: 0,
+    lastPromotion: null,
+    valuationModelVersion: COMPANY_VALUATION_MODEL_VERSION,
+    lastValuationWeek: null,
+    smoothedWeeklyRevenue: 0,
+    valuationBreakdown: createInitialValuationBreakdown(),
+    readiness: createInitialReadinessState(),
+  };
+}
+
+function createInitialReadinessState(targetStageIndex = 1) {
+  return {
+    targetStageIndex,
+    weeksHeld: 0,
+    lastEvaluatedWeek: null,
+    qualified: false,
+    valuationReady: false,
+    safeRunway: false,
+    teamReady: false,
+    pillarsPassed: 0,
+    tractionReady: false,
+    economicsReady: false,
+    resilienceReady: false,
+    resilience: 0,
+    projectedRunway: 0,
+  };
+}
+
+function createInitialBalanceState({ migrated = false } = {}) {
+  const week = Math.max(1, Number(state.week) || 1);
+  return {
+    version: BALANCE_MODEL_VERSION,
+    focusSpent: 0,
+    focusWeek: week,
+    focusMax: calculateWeeklyFocusCapacity(),
+    pressure: 0,
+    overloadRisk: 0,
+    criticalWeeks: 0,
+    lastPressureWeek: null,
+    graceUntilWeek: migrated ? week + 2 : 3,
+  };
+}
+
+function ensureBalanceState({ migrated = false } = {}) {
+  const restored = state.balance || {};
+  state.balance = {
+    ...createInitialBalanceState({ migrated }),
+    ...restored,
+    version: BALANCE_MODEL_VERSION,
+  };
+  if (Number(state.balance.focusWeek) !== Number(state.week)) {
+    state.balance.focusWeek = state.week;
+    state.balance.focusSpent = 0;
+    state.balance.focusMax = calculateWeeklyFocusCapacity();
+  }
+  state.balance.focusSpent = Math.max(0, Number(state.balance.focusSpent) || 0);
+  state.balance.focusMax = clamp(Math.round(Number(state.balance.focusMax) || calculateWeeklyFocusCapacity()), 2, 5);
+  return state.balance;
+}
+
+function calculateWeeklyFocusCapacity() {
+  const operations = Math.max(0, Number(state.team?.roles?.operations) || 0);
+  const efficiencyBonus = (Number(state.team?.efficiency) || 0) >= 85 ? 1 : 0;
+  return clamp(2 + Math.floor(Math.sqrt(operations)) + efficiencyBonus, 2, 5);
+}
+
+function weeklyFocusMax() {
+  return ensureBalanceState().focusMax;
+}
+
+function focusRemaining() {
+  const balance = ensureBalanceState();
+  return Math.max(0, weeklyFocusMax() - balance.focusSpent);
+}
+
+function canSpendFocus(cost) {
+  return focusRemaining() >= Math.max(0, Number(cost) || 0);
+}
+
+function spendFocus(cost) {
+  const amount = Math.max(0, Number(cost) || 0);
+  if (!canSpendFocus(amount)) return false;
+  state.balance.focusSpent += amount;
+  return true;
+}
+
+function focusCostForProductAction(action) {
+  return action === "pivot" ? 2 : 1;
+}
+
+function resetFocusForNewWeek() {
+  ensureBalanceState();
+  state.balance.focusWeek = state.week;
+  state.balance.focusSpent = 0;
+  state.balance.focusMax = calculateWeeklyFocusCapacity();
+}
+
+function companyResilienceScore() {
+  const product = state.product || {};
+  const ux = Number(product.ux) || Number(state.productQuality) || 0;
+  return clamp(Math.round(
+    (Number(state.productQuality) || 0) * 0.25
+      + (Number(product.stability) || 0) * 0.2
+      + ux * 0.15
+      + (Number(state.reputation) || 0) * 0.15
+      + (100 - (Number(product.technicalDebt) || 0)) * 0.15
+      + (Number(state.team?.morale) || 0) * 0.1,
+  ), 0, 100);
+}
+
+function calculateScaleOverhead(stageIndex = currentCompanyStageIndex()) {
+  const base = stageOverhead[clamp(stageIndex, 0, stageOverhead.length - 1)] || 0;
+  const graceMultiplier = Number(state.balance?.graceUntilWeek) >= Number(state.week) ? 0.35 : 1;
+  return Math.round(base * graceMultiplier);
+}
+
+function projectedBurnForStage(stageIndex) {
+  const sources = burnSources({ stageIndex });
+  return Math.max(1, sources.total);
+}
+
+function calculateStageReadiness(targetStageIndex, valuation, durableRevenue, previousReadiness = null) {
+  const requirement = stageReadinessRequirements[targetStageIndex];
+  if (!requirement) return createInitialReadinessState(targetStageIndex);
+
+  const projectedRunway = calculateRunway(state.cash, projectedBurnForStage(targetStageIndex));
+  const resilience = companyResilienceScore();
+  const tractionReady = state.users >= requirement.users && state.growthRate >= 0;
+  const economicsReady = durableRevenue >= requirement.revenue && projectedRunway >= requirement.runway;
+  const resilienceReady = resilience >= requirement.resilience;
+  const valuationReady = valuation >= companyStages[targetStageIndex].minValuation;
+  const safeRunway = projectedRunway >= Math.max(3, requirement.runway - 2);
+  const teamReady = getTeamSize() >= requirement.team;
+  const pillarsPassed = Number(tractionReady) + Number(economicsReady) + Number(resilienceReady);
+  const qualified = valuationReady && safeRunway && teamReady && pillarsPassed >= 2;
+  const sameTarget = Number(previousReadiness?.targetStageIndex) === targetStageIndex;
+  const alreadyEvaluatedThisWeek = sameTarget && Number(previousReadiness?.lastEvaluatedWeek) === Number(state.week);
+  const weeksHeld = alreadyEvaluatedThisWeek
+    ? Number(previousReadiness?.weeksHeld) || 0
+    : qualified
+      ? (sameTarget ? Number(previousReadiness?.weeksHeld) || 0 : 0) + 1
+      : 0;
+
+  return {
+    targetStageIndex,
+    weeksHeld,
+    lastEvaluatedWeek: state.week,
+    qualified,
+    valuationReady,
+    safeRunway,
+    teamReady,
+    pillarsPassed,
+    tractionReady,
+    economicsReady,
+    resilienceReady,
+    resilience,
+    projectedRunway,
+  };
+}
+
+function recurringRevenueShare() {
+  const model = state.monetization?.pricingModel || "freemium";
+  return {
+    free: 0,
+    freemium: 0.78,
+    subscription: 0.94,
+    oneTime: 0.22,
+    enterprise: 0.86,
+  }[model] ?? 0.7;
+}
+
+function smoothWeeklyRevenue(previousRevenue, observedRevenue) {
+  const previous = finiteGameNumber(previousRevenue, 0, 0, MAX_SAFE_GAME_VALUE);
+  const observed = finiteGameNumber(observedRevenue, 0, 0, MAX_SAFE_GAME_VALUE);
+
+  // Only a plausible amount of newly reported revenue is recognized each week.
+  // This keeps a funding/event windfall from being treated as durable ARR.
+  const recognitionCeiling = previous > 0 ? previous * 1.45 + 600 : 600;
+  const recognized = Math.min(observed, recognitionCeiling);
+  const smoothingWeight = recognized >= previous ? 0.28 : 0.4;
+  return Math.round(finiteGameNumber(previous + (recognized - previous) * smoothingWeight, 0, 0, MAX_SAFE_GAME_VALUE));
+}
+
+function valuationRevenueMultiple(smoothedRevenue) {
+  const fitPremium = state.market && typeof marketFitStatus === "function"
+    ? marketFitRank(marketFitStatus()) * 0.32
+    : 0;
+  const growthPremium = clamp((Number(state.growthRate) || 0) / 38, -0.55, 1.35);
+  const trustPremium = clamp(
+    ((Number(state.productQuality) || 0) + (Number(state.reputation) || 0) - 120) / 105,
+    -0.45,
+    0.75,
+  );
+  const efficientGrowthPremium = smoothedRevenue > Math.max(0, Number(state.burnRate) || 0) ? 0.35 : 0;
+  return Math.round(clamp(2.35 + fitPremium + growthPremium + trustPremium + efficientGrowthPremium, 1.7, 5.6) * 10) / 10;
+}
+
+function calculateCompanyValuationSnapshot(previousCompany = createInitialCompanyState()) {
+  if (!state || !Object.keys(state).length) {
+    return { valuation: 0, smoothedWeeklyRevenue: 0, breakdown: createInitialValuationBreakdown() };
+  }
+
+  const observedWeeklyRevenue = Math.max(0, Number(state.revenue) || 0) * recurringRevenueShare();
+  const smoothedWeeklyRevenue = smoothWeeklyRevenue(previousCompany.smoothedWeeklyRevenue, observedWeeklyRevenue);
+  const revenueMultiple = valuationRevenueMultiple(smoothedWeeklyRevenue);
+  const teamSize = Object.values(state.team?.roles || {}).reduce((sum, count) => sum + Math.max(0, Number(count) || 0), 0);
+  const product = state.product || {};
+  const operatingBase = Math.round(finiteGameNumber(
+    12000
+      + Math.min(teamSize, 250) * 6000
+      + clamp(Number(state.productQuality) || 0, 0, 100) * 100
+      + clamp(Number(product.stability) || 0, 0, 100) * 35
+      + clamp(Number(product.featureDepth) || 0, 0, 100) * 25,
+    0,
+    0,
+    MAX_SAFE_GAME_VALUE,
+  ));
+  const cashValue = Math.round(finiteGameNumber(Math.max(0, Number(state.cash) || 0) * 0.72, 0, 0, MAX_SAFE_GAME_VALUE));
+  const userUnitValue = clamp(
+    8
+      + (Number(state.productQuality) || 0) * 0.12
+      + (Number(state.reputation) || 0) * 0.1
+      + Math.max(0, Number(state.growthRate) || 0) * 0.15,
+    8,
+    35,
+  );
+  const userTractionValue = Math.round(finiteGameNumber(Math.max(0, Number(state.users) || 0) * userUnitValue, 0, 0, MAX_SAFE_GAME_VALUE));
+  const recurringRevenueValue = Math.round(finiteGameNumber(smoothedWeeklyRevenue * 52 * revenueMultiple, 0, 0, MAX_SAFE_GAME_VALUE));
+  const rawValuation = Math.round(finiteGameNumber(operatingBase + cashValue + userTractionValue + recurringRevenueValue, 0, 0, MAX_SAFE_GAME_VALUE));
+
+  // Valuations are marks, not a live stock ticker. A weekly movement guard makes
+  // promotions reflect sustained execution instead of a single extreme event.
+  const previousValuation = Math.max(0, Number(previousCompany.valuation) || 0);
+  const hasPreviousMark = previousCompany.lastValuationWeek !== null && previousValuation > 0;
+  const weeklyUpperBound = Math.max(previousValuation + 50000, Math.round(previousValuation * 1.3));
+  const weeklyLowerBound = Math.round(previousValuation * 0.82);
+  const valuation = Math.round(finiteGameNumber(hasPreviousMark
+    ? clamp(rawValuation, weeklyLowerBound, weeklyUpperBound)
+    : rawValuation, 0, 0, MAX_SAFE_GAME_VALUE));
+
+  return {
+    valuation,
+    smoothedWeeklyRevenue,
+    breakdown: {
+      operatingBase,
+      cash: cashValue,
+      recurringRevenue: recurringRevenueValue,
+      userTraction: userTractionValue,
+      revenueMultiple,
+      observedWeeklyRevenue: Math.round(observedWeeklyRevenue),
+      smoothedWeeklyRevenue,
+    },
+  };
+}
+
+function estimateCompanyValuation() {
+  return calculateCompanyValuationSnapshot(state.company || createInitialCompanyState()).valuation;
+}
+
+function companyStageForValuation(valuation) {
+  for (let index = companyStages.length - 1; index >= 0; index -= 1) {
+    if (valuation >= companyStages[index].minValuation) return index;
+  }
+  return 0;
+}
+
+function currentCompanyStage() {
+  const index = clamp(Number(state.company?.highestStageIndex) || 0, 0, companyStages.length - 1);
+  return companyStages[index];
+}
+
+function nextCompanyStage() {
+  const index = currentCompanyStageIndex();
+  return companyStages[index + 1] || null;
+}
+
+function currentCompanyStageIndex() {
+  return clamp(Number(state.company?.highestStageIndex) || 0, 0, companyStages.length - 1);
+}
+
+function companyStageProgress() {
+  const index = currentCompanyStageIndex();
+  const current = companyStages[index];
+  const next = companyStages[index + 1];
+  if (!next) return 100;
+  const span = Math.max(1, next.minValuation - current.minValuation);
+  const valuationProgress = clamp(((state.company.valuation - current.minValuation) / span) * 100, 0, 100);
+  const requirement = stageReadinessRequirements[index + 1];
+  const readiness = state.company?.readiness;
+  if (!requirement || Number(readiness?.targetStageIndex) !== index + 1) return Math.round(valuationProgress);
+  const holdProgress = clamp(((Number(readiness.weeksHeld) || 0) / requirement.holdWeeks) * 100, 0, 100);
+  const gatesProgress = (
+    Number(Boolean(readiness.valuationReady))
+      + Number(Boolean(readiness.safeRunway))
+      + Number(Boolean(readiness.teamReady))
+      + Math.min(2, Number(readiness.pillarsPassed) || 0) / 2
+  ) / 4 * 100;
+  return Math.round(Math.min(valuationProgress, Math.max(holdProgress, gatesProgress * 0.82)));
+}
+
+function nextStageGoal() {
+  const next = nextCompanyStage();
+  if (!next) return "Defend the empire and keep compounding";
+  const readiness = state.company?.readiness || {};
+  const requirement = stageReadinessRequirements[currentCompanyStageIndex() + 1];
+  if (!requirement) return `${formatMoney(next.minValuation)} valuation to become a ${next.label}`;
+  return `${readiness.weeksHeld || 0}/${requirement.holdWeeks} ready weeks · ${readiness.pillarsPassed || 0}/2 pillars for ${next.label}`;
+}
+
+function dynamicFounderObjective() {
+  const stageIndex = currentCompanyStageIndex();
+  const next = nextCompanyStage();
+  if (!next) {
+    const durability = Math.round((state.reputation + state.productQuality + Math.min(100, calculateRunwayWeeks() * 5)) / 3);
+    return {
+      title: "Build an enduring empire",
+      text: "Keep trust, product strength, and runway healthy while the company compounds without a finish line.",
+      progress: clamp(durability, 0, 100),
+      reward: "Empire resilience",
+    };
+  }
+
+  const targetIndex = stageIndex + 1;
+  const requirement = stageReadinessRequirements[targetIndex];
+  const readiness = state.company?.readiness || createInitialReadinessState(targetIndex);
+  if (requirement && (readiness.valuationReady || state.company.valuation >= next.minValuation * 0.72)) {
+    const missing = [
+      !readiness.valuationReady && `${formatMoney(next.minValuation)} valuation`,
+      !readiness.teamReady && `${requirement.team} team members`,
+      !readiness.safeRunway && `${Math.max(3, requirement.runway - 2)} weeks projected runway`,
+      readiness.pillarsPassed < 2 && "two healthy pillars",
+    ].filter(Boolean);
+    return {
+      title: `Prove readiness for ${next.label}`,
+      text: missing.length ? `Next constraint: ${missing[0]}. Promotion requires sustained execution, not a one-week spike.` : `Hold this healthy position for ${requirement.holdWeeks} weeks.`,
+      progress: companyStageProgress(),
+      reward: `${readiness.weeksHeld || 0}/${requirement.holdWeeks} qualifying weeks`,
+    };
+  }
+
+  if (startup.goal === "growth") {
+    const target = stageReadinessRequirements[stageIndex + 1]?.users || Math.max(100, Math.round(next.minValuation / 60));
+    return {
+      title: `Reach ${target.toLocaleString()} active users`,
+      text: `Grow the customer base without sacrificing the trust needed to reach ${next.label}.`,
+      progress: clamp(Math.round((state.users / target) * 100), 0, 100),
+      reward: `Momentum toward ${next.label}`,
+    };
+  }
+
+  if (startup.goal === "stability") {
+    const target = stageReadinessRequirements[stageIndex + 1]?.resilience || Math.min(90, 62 + stageIndex * 4);
+    const durability = companyResilienceScore();
+    return {
+      title: `Reach ${target}% company resilience`,
+      text: `Balance reputation, product quality, and runway before taking on ${next.label} complexity.`,
+      progress: clamp(Math.round((durability / target) * 100), 0, 100),
+      reward: `A stronger foundation for ${next.label}`,
+    };
+  }
+
+  const target = stageReadinessRequirements[stageIndex + 1]?.revenue || Math.max(120, Math.round(next.minValuation / 210));
+  return {
+    title: `Reach ${formatMoney(target)} weekly revenue`,
+    text: `Build a repeatable revenue engine capable of supporting a ${next.label}.`,
+    progress: clamp(Math.round((state.revenue / target) * 100), 0, 100),
+    reward: `Revenue leverage toward ${next.label}`,
+  };
+}
+
+function updateCompanyProgress({ suppressToast = false, force = false } = {}) {
+  if (!state || !Object.keys(state).length) return null;
+  const previous = state.company || createInitialCompanyState();
+  const valuationWeek = Math.max(1, Number(state.week) || 1);
+  if (!force && Number(previous.lastValuationWeek) === valuationWeek) {
+    const stage = companyStages[clamp(Number(previous.highestStageIndex) || 0, 0, companyStages.length - 1)];
+    if (simulationPage) simulationPage.dataset.companyStage = stage.id;
+    return { promoted: false, stage, valuation: Number(previous.valuation) || 0, updated: false };
+  }
+
+  const snapshot = calculateCompanyValuationSnapshot(previous);
+  const valuation = snapshot.valuation;
+  const previousStageIndex = clamp(Number(previous.highestStageIndex) || 0, 0, companyStages.length - 1);
+  const targetStageIndex = Math.min(companyStages.length - 1, previousStageIndex + 1);
+  const readiness = targetStageIndex > previousStageIndex
+    ? calculateStageReadiness(targetStageIndex, valuation, snapshot.smoothedWeeklyRevenue, previous.readiness)
+    : createInitialReadinessState(targetStageIndex);
+  const requirement = stageReadinessRequirements[targetStageIndex];
+  const promoted = Boolean(requirement && readiness.qualified && readiness.weeksHeld >= requirement.holdWeeks);
+  const highestStageIndex = promoted ? targetStageIndex : previousStageIndex;
+  const stage = companyStages[highestStageIndex];
+  const promotion = promoted
+    ? { from: companyStages[Number(previous.highestStageIndex) || 0].id, to: stage.id, week: state.week, valuation }
+    : previous.lastPromotion || null;
+
+  state.company = {
+    ...previous,
+    valuation,
+    stageIndex: highestStageIndex,
+    highestStageIndex,
+    stage: stage.id,
+    promotionCount: (Number(previous.promotionCount) || 0) + (promoted ? 1 : 0),
+    lastPromotion: promotion,
+    valuationModelVersion: COMPANY_VALUATION_MODEL_VERSION,
+    lastValuationWeek: valuationWeek,
+    smoothedWeeklyRevenue: snapshot.smoothedWeeklyRevenue,
+    valuationBreakdown: snapshot.breakdown,
+    readiness: promoted && highestStageIndex < companyStages.length - 1
+      ? createInitialReadinessState(highestStageIndex + 1)
+      : readiness,
+  };
+
+  if (simulationPage) simulationPage.dataset.companyStage = stage.id;
+  if (promoted && !suppressToast) showPromotionToast(stage);
+  return { promoted, stage, valuation, updated: true };
+}
+
+function showPromotionToast(stage) {
+  if (!promotionToast) return;
+  promotionToast.classList.remove("is-hidden");
+  promotionToast.textContent = `Company promoted: ${stage.label}`;
+  window.clearTimeout(promotionToastTimer);
+  promotionToastTimer = window.setTimeout(() => promotionToast.classList.add("is-hidden"), 3200);
+}
+
+function renderCompanyProgress() {
+  if (!state.company) return;
+  const stage = currentCompanyStage();
+  const objective = dynamicFounderObjective();
+  const breakdown = {
+    ...createInitialValuationBreakdown(),
+    ...(state.company.valuationBreakdown || {}),
+  };
+  if (simulationPage) simulationPage.dataset.companyStage = stage.id;
+  if (companyStageLabel) {
+    companyStageLabel.textContent = stage.label;
+    const readiness = state.company.readiness;
+    const requirement = stageReadinessRequirements[readiness?.targetStageIndex];
+    companyStageLabel.title = requirement
+      ? `Next stage: valuation ${readiness.valuationReady ? "ready" : "needed"}, team ${readiness.teamReady ? "ready" : "needed"}, ${readiness.pillarsPassed || 0}/2 pillars, ${readiness.weeksHeld || 0}/${requirement.holdWeeks} sustained weeks.`
+      : "Business Empire is endless. Keep the company durable.";
+  }
+  if (companyValuationLabel) {
+    companyValuationLabel.textContent = formatMoney(state.company.valuation);
+    companyValuationLabel.title = [
+      `Updated Week ${state.company.lastValuationWeek || state.week}`,
+      `${formatMoney(breakdown.smoothedWeeklyRevenue)}/wk durable revenue at ${breakdown.revenueMultiple || 0}x`,
+      `${formatMoney(breakdown.cash)} cash value`,
+      `${formatMoney(breakdown.userTraction)} user traction`,
+      `${formatMoney(breakdown.operatingBase)} operating base`,
+      `Resilience ${state.company.readiness?.resilience || companyResilienceScore()}`,
+      `Projected runway ${state.company.readiness?.projectedRunway ?? calculateRunwayWeeks()} weeks`,
+    ].join(" · ");
+  }
+  if (companyStageProgressBar) companyStageProgressBar.style.width = `${companyStageProgress()}%`;
+  if (companyNextStageLabel) companyNextStageLabel.textContent = nextStageGoal();
+  if (objectiveTitle) objectiveTitle.textContent = objective.title;
+  if (objectiveText) objectiveText.textContent = objective.text;
+  if (objectiveProgressBar) objectiveProgressBar.style.width = `${objective.progress}%`;
+  if (objectiveReward) objectiveReward.textContent = objective.reward;
+}
 
 function createInitialMarketState() {
   const segment = inferInitialSegment();
@@ -1501,6 +2231,8 @@ function createInitialMarketState() {
     segment,
     positioning: "niche",
     pricing: "freemium",
+    lastChoiceWeek: {},
+    actionLastUsedWeek: {},
     message: "",
     lastAction: "Market map initialized.",
   };
@@ -1513,14 +2245,7 @@ function createInitialMonetizationState() {
     price: pricingModels[pricingModel].basePrice,
     targetSegment: inferInitialSegment(),
     positioning: "niche",
-  };
-}
-
-function createProductRoadmap() {
-  return {
-    backlog: ["Improve Onboarding", "Fix Bugs", "Add Core Feature"],
-    inProgress: [],
-    shipped: [],
+    lastPriceChangeWeek: null,
   };
 }
 
@@ -1536,34 +2261,32 @@ function inferInitialSegment() {
 
 function createInitialProduct(id) {
   const model = startup.goal === "profit" ? "subscription" : startup.goal === "growth" ? "freemium" : "freemium";
-  const productQuality = 55;
-  const type = startupTypes[startup.startupType]?.label || "SaaS";
   return {
     id,
     name: startup.idea || "Core Product",
-    type,
-    category: type,
+    type: startupTypes[startup.startupType]?.label || "SaaS",
     targetSegment: startup.audience || marketSegments[inferInitialSegment()]?.label || "Founders",
     pricingModel: model,
     price: pricingModels[model].basePrice,
+    useGlobalPricing: true,
     users: 10,
     revenue: 0,
-    productQuality,
-    quality: productQuality,
+    productQuality: 55,
     stability: 60,
     ux: 55,
     featureDepth: 35,
     technicalDebt: 25,
     active: true,
-    status: "active",
     growth: 0,
-    roadmap: createProductRoadmap(),
-    completedUpgradeIds: [],
-    message: "",
+    lastManagedWeek: null,
   };
 }
 
 function startGame(formData) {
+  cancelPendingWeekAdvance();
+  isArchiveOnlyView = false;
+  archiveFullGameStateAsAbandoned();
+  clearFullGameState();
   startup = {
     idea: formData.get("idea").trim(),
     audience: formData.get("audience").trim(),
@@ -1602,12 +2325,14 @@ function startGame(formData) {
       morale: 76,
       efficiency: 76,
       layoffs: 0,
+      lastRoleActionWeek: {},
       message: "",
     },
     economy: {
       marketingSpend: 0,
       optionalExpenses: Math.round(type.startingBurn * 0.25),
       developmentPausedWeeks: 0,
+      lastCostCutWeek: null,
     },
     product: {
       stability: 60,
@@ -1618,15 +2343,18 @@ function startGame(formData) {
       products: [
         createInitialProduct(1),
       ],
-      activeProductId: 1,
-      roadmap: createProductRoadmap(),
+      roadmap: {
+        backlog: ["Improve Onboarding", "Fix Bugs", "Add Core Feature"],
+        inProgress: [],
+        shipped: [],
+      },
       completedUpgradeIds: [],
       message: "",
     },
-    activeProductId: 1,
     market: createInitialMarketState(),
     monetization: createInitialMonetizationState(),
     history: [],
+    totalDecisionCount: 0,
     achievements: loadAchievements(),
     achievementsThisRun: [],
     hadCriticalRunway: false,
@@ -1634,7 +2362,16 @@ function startGame(formData) {
     lastInsight: "Choose your first move. Every option has a cost.",
     currentEventImpact: "",
     immediateAppliedPromptId: null,
+    company: createInitialCompanyState(),
+    ai: {
+      enabled: false,
+      status: "Curated events active",
+      lastRequestWeek: null,
+      lastSuccessWeek: null,
+    },
+    seenLateGameEvents: [],
   };
+  state.balance = createInitialBalanceState();
   pendingResolution = null;
 
   activeCenterView = "overview";
@@ -1652,9 +2389,15 @@ function startGame(formData) {
   endingPage.classList.add("is-hidden");
   endingPage.classList.remove("ending-failure", "ending-success", "ending-unicorn");
   simulationPage.classList.remove("is-hidden");
-  updateStartupIdentity();
+  companyName.textContent = startup.idea;
+  companyContext.textContent = `${type.label} · ${founderStyles[startup.style].label} founder · ${goals[startup.goal].label} goal · ${type.note}`;
+  profileName.textContent = startup.idea;
+  profileType.textContent = type.label;
+  profileStyle.textContent = founderStyles[startup.style].label;
+  profileGoal.textContent = goals[startup.goal].label;
   syncMonetizationToMarketAndProducts();
   state.burnRate = calculateCurrentBurnRate();
+  updateCompanyProgress({ suppressToast: true });
   render();
 }
 
@@ -1665,52 +2408,17 @@ function createRunId() {
   return `run_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
-function startupDisplayName() {
-  return (startup.idea || "").trim() || "Unnamed Startup";
-}
-
-function startupInitials(name = startupDisplayName()) {
-  const words = name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  if (!words.length || name === "Unnamed Startup") return "US";
-  const initials = words.length === 1
-    ? words[0].slice(0, 2)
-    : `${words[0][0]}${words[1][0]}`;
-  return initials.toUpperCase();
-}
-
-function startupSubtitle(type = startupTypes[startup.startupType], style = founderStyles[startup.style], goal = goals[startup.goal]) {
-  if (!startup.idea) return "Founder simulation file";
-  return `${type?.label || "Startup"} · ${style?.label || "Balanced"} Founder · ${goal?.label || "Profit"} Goal`;
-}
-
-function updateStartupIdentity() {
-  const type = startupTypes[startup.startupType];
-  const style = founderStyles[startup.style];
-  const goal = goals[startup.goal];
-  const name = startupDisplayName();
-  const subtitle = startupSubtitle(type, style, goal);
-
-  companyName.textContent = name;
-  companyContext.textContent = startup.idea
-    ? `${subtitle}${type?.note ? ` · ${type.note}` : ""}`
-    : subtitle;
-  sidebarInitials.textContent = startupInitials(name);
-  sidebarStartupName.textContent = name.toUpperCase();
-  sidebarStartupSubtitle.textContent = subtitle;
-  profileName.textContent = name;
-  profileType.textContent = type?.label || "Startup";
-  profileStyle.textContent = style?.label || "Balanced";
-  profileGoal.textContent = goal?.label || "Profit";
-}
-
 function render() {
   applyImmediateEventEffect(activePrompt);
+  updateCompanyProgress();
 
-  updateStartupIdentity();
   weekNumber.textContent = state.week;
+  const focusMax = weeklyFocusMax();
+  const availableFocus = focusRemaining();
+  if (focusStat) focusStat.textContent = `${availableFocus}/${focusMax}`;
+  if (focusStatPill) {
+    focusStatPill.title = `${availableFocus} of ${focusMax} Focus available. Optional management moves use Focus; the weekly decision is free.`;
+  }
   usersStat.textContent = state.users.toLocaleString();
   revenueStat.textContent = formatMoney(state.revenue);
   cashStat.textContent = formatMoney(state.cash);
@@ -1732,7 +2440,7 @@ function render() {
   scenarioText.textContent = activePrompt.text;
   eventBadge.classList.toggle("is-hidden", activePrompt.type !== "event");
   eventBadge.textContent = state.currentEventImpact || "Random event";
-  historyCount.textContent = state.history.length;
+  historyCount.textContent = state.totalDecisionCount ?? state.history.length;
   decisionWeekLabel.textContent = state.week;
   insightText.textContent = state.lastInsight;
   renderGuidedTip();
@@ -1747,53 +2455,79 @@ function render() {
     const button = document.createElement("button");
     button.className = `decision-button ${classifyDecision(decision.effects)}`;
     button.type = "button";
-    button.disabled = Boolean(pendingResolution);
-    button.innerHTML = `<i>${String(index + 1).padStart(2, "0")}</i><strong>${decision.label}</strong><span>${decision.hint}</span><em>${decisionPreview(decision.effects)}</em>`;
+    button.disabled = Boolean(pendingResolution) || isAdvancingWeek;
+    const number = document.createElement("i");
+    number.textContent = String(index + 1).padStart(2, "0");
+    const label = document.createElement("strong");
+    label.textContent = decision.label;
+    const hint = document.createElement("span");
+    hint.textContent = decision.hint;
+    const preview = document.createElement("em");
+    preview.textContent = decisionPreview(decision.effects);
+    button.append(number, label, hint, preview);
     button.addEventListener("click", () => makeDecision(decision));
     decisionButtons.append(button);
   });
   renderDecisionResult();
 
-  renderHistory();
-  renderTimelineView();
-  renderTeamView();
-  renderProductView();
-  renderMarketView();
-  renderAchievementsView();
-  renderRunsView();
+  if (activeCenterView === "timeline") renderTimelineView();
+  if (activeCenterView === "team") renderTeamView();
+  if (activeCenterView === "product") renderProductView();
+  if (activeCenterView === "market") renderMarketView();
+  if (activeCenterView === "achievements") renderAchievementsView();
+  if (activeCenterView === "runs") renderRunsView();
+  renderCompanyProgress();
+  renderAIState();
+  updateSystemActionLock();
   persistCurrentRun();
+  persistFullGameState();
 }
 
 function applyImmediateEventEffect(prompt) {
-  if (prompt.type !== "event" || !prompt.immediate || state.immediateAppliedPromptId === prompt.title) {
+  const promptInstanceId = `${Math.max(1, Number(state.week) || 1)}:${prompt.title}`;
+  if (prompt.type !== "event" || !prompt.immediate || state.immediateAppliedPromptId === promptInstanceId) {
     return;
   }
 
+  const before = captureStats();
   const immediate = normalizeEffects(prompt.immediate);
+  if (state.week <= 10 && immediate.users < 0 && state.users > 1) {
+    const earlyLossCap = Math.min(state.users - 1, Math.max(3, Math.round(state.users * 0.4)));
+    immediate.users = Math.max(immediate.users, -earlyLossCap);
+  }
   applyEffects(immediate);
-  state.peakUsers = Math.max(state.peakUsers, state.users);
-  state.immediateAppliedPromptId = prompt.title;
+  state.peakUsers = Math.round(finiteGameNumber(Math.max(state.peakUsers, state.users), state.users, 0, MAX_SAFE_GAME_VALUE));
+  state.immediateAppliedPromptId = promptInstanceId;
   state.currentEventImpact = `Event impact: ${summarizeEffects(immediate)}`;
+  recalculateDerivedState();
+
+  const ending = evaluateEnding();
+  if (ending && !pendingResolution) {
+    const delta = diffStats(before, captureStats());
+    const insight = `${prompt.title} caused an immediate company failure before a founder response was possible.`;
+    state.lastDelta = delta;
+    state.lastInsight = insight;
+    pendingResolution = {
+      decision: "Immediate event impact",
+      delta,
+      insight,
+      outcome: "bad",
+      ending,
+      continueWeek: null,
+    };
+  }
 }
 
 function calculateStreakBonus() {
-  if (state.streak < 2) {
-    return { users: 0, growthRate: 0 };
-  }
-
-  return {
-    users: Math.round(Math.max(1, state.users * 0.03)),
-    growthRate: Math.min(5, Math.ceil(state.streak * 0.6)),
-  };
+  // Streaks remain a score/reward signal, not an exponential growth resource.
+  return { users: 0, growthRate: 0 };
 }
 
 function classifyOutcome(delta) {
   const strongPositive = delta.users >= 15 || delta.revenue >= 600 || delta.reputation >= 6;
   const badOutcome = delta.cash < -1200 || delta.reputation <= -6 || delta.users <= -12 || delta.growthRate <= -6;
 
-  if (badOutcome && !strongPositive) {
-    return "bad";
-  }
+  if (badOutcome) return "bad";
   if (strongPositive) {
     return "good";
   }
@@ -1813,25 +2547,24 @@ function updateStreak(outcome) {
 }
 
 function calculateTeamEffects() {
-  const roles = state.team.roles;
-  const efficiencyMultiplier = state.team.efficiency / 100;
+  const moralePenalty = state.team.morale < 25 ? 3 : state.team.morale < 45 ? 1 : 0;
   return normalizeEffects({
-    users: Math.round((roles.marketer * 4 + roles.designer * 1.4) * efficiencyMultiplier),
-    revenue: Math.round((roles.sales * 125 + roles.operations * 32) * efficiencyMultiplier),
-    cash: 0,
-    burnRate: 0,
-    reputation: Math.round((roles.designer * 2 + roles.operations) * efficiencyMultiplier),
-    productQuality: Math.round((roles.engineer * 2.2 + roles.designer * 0.8) * efficiencyMultiplier),
-    growthRate: Math.round((roles.marketer * 1.05 + roles.sales * 0.35 - lowMoraleDrag()) * efficiencyMultiplier),
+    reputation: -moralePenalty,
+    productQuality: -moralePenalty,
+    growthRate: -Math.max(moralePenalty, lowMoraleDrag()),
   });
 }
 
 function recalculateDerivedState() {
   if (!state.team || !state.product || !state.market) return;
+  ensureBalanceState();
   syncMonetizationToMarketAndProducts();
   syncAggregateProductStats();
   state.team.efficiency = calculateTeamEfficiency();
   state.burnRate = calculateCurrentBurnRate();
+  if ((Number(state.balance?.criticalWeeks) || 0) > 0 && criticalConditionCount() < 2) {
+    state.balance.criticalWeeks = 0;
+  }
   state.peakUsers = Math.max(state.peakUsers, state.users);
   if (calculateRunwayWeeks() <= 4) {
     state.hadCriticalRunway = true;
@@ -1840,140 +2573,30 @@ function recalculateDerivedState() {
 
 function syncMonetizationToMarketAndProducts() {
   if (!state.monetization || !state.market || !state.product) return;
-  ensureProductPortfolioState();
-  syncMonetizationFromActiveProduct();
-}
-
-function ensureProductPortfolioState() {
-  if (!state.product) return null;
-  if (!Array.isArray(state.product.products)) {
-    state.product.products = [];
-  }
-  if (!state.product.products.length) {
-    state.product.products.push(createInitialProduct(state.product.nextProductId || 1));
-    state.product.nextProductId = (state.product.nextProductId || 1) + 1;
-  }
-
-  state.product.products.forEach((product, index) => {
-    const fallbackModel = product.pricingModel || state.monetization?.pricingModel || "freemium";
-    const safeModel = pricingModels[fallbackModel] ? fallbackModel : "freemium";
-    product.id = Number(product.id ?? index + 1);
-    product.name = product.name || (index === 0 ? startup.idea || "Core Product" : `Product ${product.id}`);
-    product.type = product.type || product.category || "Tool";
-    product.category = product.category || product.type;
-    product.pricingModel = safeModel;
-    product.price = clampProductPrice(product.pricingModel, product.price ?? pricingModels[safeModel].basePrice);
-    product.targetSegment = product.targetSegment || marketSegments[state.market?.segment || "founders"]?.label || "Founders";
-    product.users = Math.max(0, Math.round(product.users || 0));
-    product.growth = Math.round(product.growth || 0);
-    product.revenue = Math.max(0, Math.round(product.revenue || 0));
-    product.productQuality = clamp(Math.round(product.productQuality ?? product.quality ?? state.productQuality ?? 50), 0, 100);
-    product.quality = product.productQuality;
-    product.stability = clamp(Math.round(product.stability ?? state.product.stability ?? 50), 0, 100);
-    product.ux = clamp(Math.round(product.ux ?? state.product.ux ?? product.productQuality), 0, 100);
-    product.featureDepth = clamp(Math.round(product.featureDepth ?? state.product.featureDepth ?? 25), 0, 100);
-    product.technicalDebt = clamp(Math.round(product.technicalDebt ?? state.product.technicalDebt ?? 30), 0, 100);
-    product.active = product.active !== false && product.status !== "inactive";
-    product.status = product.active ? "active" : "inactive";
-    product.roadmap = normalizeProductRoadmap(product.roadmap || (index === 0 ? state.product.roadmap : null));
-    product.completedUpgradeIds = Array.isArray(product.completedUpgradeIds)
-      ? product.completedUpgradeIds
-      : Array.isArray(state.product.completedUpgradeIds) && index === 0
-        ? [...state.product.completedUpgradeIds]
-        : [];
-    product.message = product.message || "";
+  state.market.pricing = state.monetization.pricingModel;
+  state.monetization.targetSegment = state.market.segment;
+  state.monetization.positioning = state.market.positioning;
+  state.product.products?.forEach((product) => {
+    if (product.useGlobalPricing !== false) {
+      product.pricingModel = state.monetization.pricingModel;
+      product.price = state.monetization.price;
+      product.targetSegment = marketSegments[state.market.segment]?.label || product.targetSegment;
+    }
   });
-  const nextId = Math.max(...state.product.products.map((product) => Number(product.id) || 0)) + 1;
-  state.product.nextProductId = Math.max(Number(state.product.nextProductId) || 1, nextId);
-
-  const currentId = Number(state.product.activeProductId ?? state.activeProductId);
-  const current = state.product.products.find((product) => product.id === currentId);
-  const fallback = state.product.products.find((product) => product.active) || state.product.products[0];
-  state.product.activeProductId = current?.id ?? fallback?.id ?? null;
-  state.activeProductId = state.product.activeProductId;
-  syncActiveRoadmapReference();
-  return activeProduct();
-}
-
-function normalizeProductRoadmap(roadmap) {
-  return {
-    backlog: Array.isArray(roadmap?.backlog) ? roadmap.backlog : ["Improve Onboarding", "Fix Bugs", "Add Core Feature"],
-    inProgress: Array.isArray(roadmap?.inProgress) ? roadmap.inProgress : [],
-    shipped: Array.isArray(roadmap?.shipped) ? roadmap.shipped : [],
-  };
-}
-
-function activeProduct() {
-  const products = state.product?.products || [];
-  const activeId = Number(state.product?.activeProductId ?? state.activeProductId);
-  return products.find((product) => product.id === activeId) || products.find((product) => product.active) || products[0] || null;
-}
-
-function activeProductRoadmap() {
-  const product = activeProduct();
-  if (!product) return normalizeProductRoadmap(state.product?.roadmap);
-  product.roadmap = normalizeProductRoadmap(product.roadmap);
-  syncActiveRoadmapReference();
-  return product.roadmap;
-}
-
-function syncActiveRoadmapReference() {
-  const product = activeProduct();
-  if (product?.roadmap) {
-    state.product.roadmap = product.roadmap;
-    state.product.completedUpgradeIds = product.completedUpgradeIds || [];
-  }
-}
-
-function setActiveProduct(productId) {
-  ensureProductPortfolioState();
-  const product = state.product.products.find((item) => item.id === Number(productId));
-  if (!product) return null;
-  state.product.activeProductId = product.id;
-  state.activeProductId = product.id;
-  syncActiveRoadmapReference();
-  syncMonetizationFromActiveProduct();
-  state.product.message = `${product.name} selected. Product actions now apply only to this product.`;
-  return product;
-}
-
-function syncMonetizationFromActiveProduct() {
-  const product = activeProduct();
-  if (!product) return;
-  const model = pricingModels[product.pricingModel] ? product.pricingModel : "freemium";
-  product.pricingModel = model;
-  product.price = clampProductPrice(model, product.price ?? pricingModels[model].basePrice);
-  state.monetization = {
-    pricingModel: model,
-    price: product.price,
-    targetSegment: product.targetSegment || marketSegments[state.market?.segment || "founders"]?.label || "Founders",
-    positioning: state.market?.positioning || "niche",
-  };
-  if (state.market) {
-    state.market.pricing = model;
-  }
 }
 
 function setGlobalMonetization(pricingModel, price = pricingModels[pricingModel]?.basePrice, reason = "") {
-  return setActiveProductMonetization(pricingModel, price, reason);
-}
-
-function setActiveProductMonetization(pricingModel, price = pricingModels[pricingModel]?.basePrice, reason = "") {
-  ensureProductPortfolioState();
-  const product = activeProduct();
-  if (!product) return;
   const model = pricingModels[pricingModel] ? pricingModel : "freemium";
-  product.pricingModel = model;
-  product.price = clampProductPrice(model, price ?? pricingModels[model].basePrice);
-  syncMonetizationFromActiveProduct();
+  state.monetization.pricingModel = model;
+  state.monetization.price = clampGlobalPrice(model, price ?? pricingModels[model].basePrice);
+  syncMonetizationToMarketAndProducts();
   if (reason) {
-    product.message = reason;
-    state.product.message = `${product.name}: ${reason}`;
+    state.product.message = reason;
     state.market.message = reason;
   }
 }
 
-function clampProductPrice(model, price) {
+function clampGlobalPrice(model, price) {
   const band = pricingBands[model] || pricingBands.freemium;
   const adjusted = clamp(Math.round(price), band.min, band.max);
   if (adjusted !== Math.round(price)) {
@@ -1984,8 +2607,7 @@ function clampProductPrice(model, price) {
 }
 
 function monetizationNote() {
-  const product = activeProduct();
-  const model = product?.pricingModel || state.monetization?.pricingModel || "freemium";
+  const model = state.monetization?.pricingModel || "freemium";
   const notes = {
     free: "No direct revenue, faster user growth, more runway pressure.",
     freemium: "Balanced growth with modest paid conversion.",
@@ -1997,22 +2619,92 @@ function monetizationNote() {
 }
 
 function activeProducts() {
-  ensureProductPortfolioState();
   return state.product?.products?.filter((product) => product.active) || [];
 }
 
-function syncAggregateProductStats() {
-  ensureProductPortfolioState();
-  const products = state.product?.products || [];
+function inferredProductUx(product) {
+  const savedUx = Number(product?.ux);
+  if (Number.isFinite(savedUx)) return clamp(Math.round(savedUx), 0, 100);
+  return clamp(Math.round(
+    (Number(product?.productQuality) || 0) * 0.55
+      + (Number(product?.stability) || 0) * 0.25
+      + (Number(product?.featureDepth) || 0) * 0.2
+      - (Number(product?.technicalDebt) || 0) * 0.12,
+  ), 0, 100);
+}
+
+function applyProductEntityDeltas(deltas = {}, products = activeProducts()) {
   if (!products.length) return;
-  const weighted = (key) => Math.round(products.reduce((sum, product) => sum + product[key] * Math.max(1, product.users), 0) / products.reduce((sum, product) => sum + Math.max(1, product.users), 0));
+  const qualityDelta = Number(deltas.productQuality ?? deltas.quality) || 0;
+  const stabilityDelta = Number(deltas.stability) || 0;
+  const uxDelta = Number(deltas.ux) || 0;
+  const featureDepthDelta = Number(deltas.featureDepth) || 0;
+  const technicalDebtDelta = Number(deltas.technicalDebt) || 0;
+
+  products.forEach((product) => {
+    product.ux = inferredProductUx(product);
+    product.productQuality = clamp(Math.round((Number(product.productQuality) || 0) + qualityDelta), 0, 100);
+    product.stability = clamp(Math.round((Number(product.stability) || 0) + stabilityDelta), 0, 100);
+    product.ux = clamp(Math.round(product.ux + uxDelta), 0, 100);
+    product.featureDepth = clamp(Math.round((Number(product.featureDepth) || 0) + featureDepthDelta), 0, 100);
+    product.technicalDebt = clamp(Math.round((Number(product.technicalDebt) || 0) + technicalDebtDelta), 0, 100);
+  });
+}
+
+function syncAggregateProductStats() {
+  const products = activeProducts();
+  if (!products.length) return;
+  products.forEach((product) => {
+    product.users = Math.round(finiteGameNumber(product.users, 0, 0, MAX_SAFE_GAME_VALUE));
+    product.revenue = Math.round(finiteGameNumber(product.revenue, 0, 0, MAX_SAFE_GAME_VALUE));
+    product.productQuality = Math.round(finiteGameNumber(product.productQuality, 50, 0, 100));
+    product.stability = Math.round(finiteGameNumber(product.stability, 50, 0, 100));
+    product.featureDepth = Math.round(finiteGameNumber(product.featureDepth, 25, 0, 100));
+    product.technicalDebt = Math.round(finiteGameNumber(product.technicalDebt, 25, 0, 100));
+    product.ux = inferredProductUx(product);
+  });
+  const totalWeight = products.reduce((sum, product) => sum + Math.max(1, product.users), 0);
+  const weighted = (key) => Math.round(products.reduce(
+    (sum, product) => sum + product[key] * (Math.max(1, product.users) / totalWeight),
+    0,
+  ));
   state.productQuality = weighted("productQuality");
   state.product.stability = weighted("stability");
+  state.product.ux = weighted("ux");
   state.product.featureDepth = weighted("featureDepth");
   state.product.technicalDebt = weighted("technicalDebt");
-  state.product.ux = clamp(Math.round(state.productQuality * 0.55 + state.product.stability * 0.25 + state.product.featureDepth * 0.2 - state.product.technicalDebt * 0.12), 0, 100);
-  state.users = products.reduce((sum, product) => sum + product.users, 0);
-  state.revenue = products.reduce((sum, product) => sum + product.revenue, 0);
+  state.users = Math.round(finiteGameNumber(products.reduce((sum, product) => sum + product.users, 0), 0, 0, MAX_SAFE_GAME_VALUE));
+  state.revenue = Math.round(finiteGameNumber(products.reduce((sum, product) => sum + product.revenue, 0), 0, 0, MAX_SAFE_GAME_VALUE));
+}
+
+function distributeUserEffectToProducts(userDelta) {
+  const products = activeProducts();
+  let remaining = Math.round(finiteGameNumber(userDelta, 0));
+  if (!products.length || remaining === 0) return;
+  const totalUsers = products.reduce((sum, product) => sum + Math.max(1, product.users), 0);
+  products.forEach((product, index) => {
+    const isLast = index === products.length - 1;
+    const share = isLast ? remaining : Math.round(userDelta * (Math.max(1, product.users) / totalUsers));
+    const applied = Math.max(-product.users, share);
+    product.users = Math.round(finiteGameNumber(product.users + applied, 0, 0, MAX_SAFE_GAME_VALUE));
+    product.growth = applied;
+    remaining -= applied;
+  });
+}
+
+function applyQualityEffectToProducts(qualityDelta) {
+  const products = activeProducts();
+  if (!products.length || !qualityDelta) return;
+  products.forEach((product) => {
+    product.productQuality = clamp(Math.round(product.productQuality + qualityDelta), 0, 100);
+  });
+}
+
+function allocateRevenueEffectToProducts(revenueDelta) {
+  const products = activeProducts().sort((a, b) => b.users - a.users);
+  if (!products.length || !revenueDelta) return;
+  const primary = products[0];
+  primary.revenue = Math.round(finiteGameNumber(primary.revenue + revenueDelta, 0, 0, MAX_SAFE_GAME_VALUE));
 }
 
 function calculateRunway(cash, burnRate) {
@@ -2032,9 +2724,11 @@ function calculateMarketFit(demand, differentiation, reputation, productQuality,
   const score =
     demand * 0.24 +
     differentiation * 0.22 +
-    reputation * 0.2 +
-    clamp(growthRate + 20, 0, 100) * 0.16 +
-    productQuality * 0.18;
+    reputation * 0.18 +
+    clamp(growthRate + 20, 0, 100) * 0.12 +
+    productQuality * 0.18 -
+    competitorPressure * 0.12 -
+    (Number(state.market?.competition) || 0) * 0.06;
   if (score >= 78 && competitorPressure < 70) return "Category Leader";
   if (score >= 64) return "Strong Fit";
   if (score >= 46) return "Emerging Fit";
@@ -2063,7 +2757,7 @@ function calculateDevCapacity() {
   const baseCapacity = (roles.engineer || 0) * 2 + (roles.designer || 0) * 1 + (roles.operations || 0) * 0.5;
   const morale = state.team?.morale || 70;
   const moraleMultiplier = morale < 35 ? 0.6 : morale < 55 ? 0.8 : morale > 82 ? 1.12 : 1;
-  return Math.max(0.5, Number((baseCapacity * moraleMultiplier).toFixed(1)));
+  return Math.max(0, Number((baseCapacity * moraleMultiplier).toFixed(1)));
 }
 
 function upgradeWorkMultiplier(upgradeKey) {
@@ -2075,7 +2769,7 @@ function upgradeWorkMultiplier(upgradeKey) {
   if (["onboarding", "uiux"].includes(upgradeKey) && (roles.designer || 0) < 1) {
     multiplier += 0.35;
   }
-  if ((roles.operations || 0) < 1 && activeProductRoadmap().inProgress.length >= 2) {
+  if ((roles.operations || 0) < 1 && state.product.roadmap.inProgress.length >= 2) {
     multiplier += 0.15;
   }
   return multiplier;
@@ -2104,37 +2798,33 @@ function applyCrossSystemEffects(effects, context = {}) {
   const label = `${context.title || ""} ${context.decision || ""}`.toLowerCase();
   const churnRisk = calculateChurnRisk();
   const growthPotential = calculateGrowthPotential();
-  const focusedProduct = activeProduct();
-
-  if (focusedProduct) {
-    focusedProduct.productQuality = clamp(focusedProduct.productQuality + effects.productQuality, 0, 100);
-    focusedProduct.quality = focusedProduct.productQuality;
-    focusedProduct.stability = clamp(focusedProduct.stability + Math.round(effects.productQuality / 3), 0, 100);
-    focusedProduct.ux = clamp(focusedProduct.ux + Math.round(effects.reputation / 4), 0, 100);
-    focusedProduct.featureDepth = clamp(focusedProduct.featureDepth + Math.max(0, Math.round(effects.growthRate / 3)), 0, 100);
-    focusedProduct.technicalDebt = clamp(focusedProduct.technicalDebt + (effects.productQuality < 0 ? Math.ceil(Math.abs(effects.productQuality) / 2) : 0), 0, 100);
-  }
+  const productDeltas = {
+    stability: 0,
+    ux: 0,
+    featureDepth: 0,
+    technicalDebt: 0,
+  };
 
   if (effects.productQuality > 0) {
-    state.product.stability = clamp(state.product.stability + Math.ceil(effects.productQuality / 5), 0, 100);
-    state.product.ux = clamp(state.product.ux + Math.ceil(effects.productQuality / 7), 0, 100);
+    productDeltas.stability += Math.ceil(effects.productQuality / 5);
+    productDeltas.ux += Math.ceil(effects.productQuality / 7);
     state.market.differentiation = clamp(state.market.differentiation + Math.ceil(effects.productQuality / 9), 0, 100);
   }
   if (effects.productQuality < 0) {
-    state.product.technicalDebt = clamp(state.product.technicalDebt + Math.ceil(Math.abs(effects.productQuality) / 2), 0, 100);
-    state.product.stability = clamp(state.product.stability - Math.ceil(Math.abs(effects.productQuality) / 3), 0, 100);
+    productDeltas.technicalDebt += Math.ceil(Math.abs(effects.productQuality) / 2);
+    productDeltas.stability -= Math.ceil(Math.abs(effects.productQuality) / 3);
   }
 
   if (label.includes("bug") || label.includes("reliability") || label.includes("incident") || label.includes("crash")) {
-    state.product.stability = clamp(state.product.stability + Math.max(1, Math.round(effects.productQuality / 3)), 0, 100);
-    state.product.technicalDebt = clamp(state.product.technicalDebt - Math.max(1, Math.round(Math.max(0, effects.productQuality) / 4)), 0, 100);
+    productDeltas.stability += Math.max(1, Math.round(effects.productQuality / 3));
+    productDeltas.technicalDebt -= Math.max(1, Math.round(Math.max(0, effects.productQuality) / 4));
   }
   if (label.includes("feature") || label.includes("roadmap") || label.includes("sprint")) {
-    state.product.featureDepth = clamp(state.product.featureDepth + Math.max(1, Math.round(Math.max(0, effects.growthRate) / 2)), 0, 100);
-    state.product.technicalDebt = clamp(state.product.technicalDebt + (effects.growthRate > 2 ? 2 : 0), 0, 100);
+    productDeltas.featureDepth += Math.max(1, Math.round(Math.max(0, effects.growthRate) / 2));
+    productDeltas.technicalDebt += effects.growthRate > 2 ? 2 : 0;
   }
   if (label.includes("onboarding") || label.includes("ux") || label.includes("design")) {
-    state.product.ux = clamp(state.product.ux + Math.max(1, Math.round(Math.max(0, effects.reputation) / 3)), 0, 100);
+    productDeltas.ux += Math.max(1, Math.round(Math.max(0, effects.reputation) / 3));
   }
 
   if (effects.users > 8 || effects.growthRate > 2) {
@@ -2143,7 +2833,7 @@ function applyCrossSystemEffects(effects, context = {}) {
     if (state.productQuality < 50 || state.product.stability < 50 || churnRisk > 62) {
       effects.reputation -= 3;
       state.market.differentiation = clamp(state.market.differentiation - 2, 0, 100);
-      state.product.technicalDebt = clamp(state.product.technicalDebt + 2, 0, 100);
+      productDeltas.technicalDebt += 2;
     }
   }
 
@@ -2172,6 +2862,8 @@ function applyCrossSystemEffects(effects, context = {}) {
     effects.growthRate -= 1;
   }
 
+  applyProductEntityDeltas(productDeltas);
+  syncAggregateProductStats();
   state.team.efficiency = calculateTeamEfficiency();
 }
 
@@ -2210,25 +2902,38 @@ function calculateProductMaintenanceCost() {
   const activeCount = products.filter((product) => product.active).length;
   const earlyDiscount = state.week <= 10 ? 0.72 : state.week <= 25 ? 0.9 : 1;
   const pauseDiscount = state.economy?.developmentPausedWeeks > 0 ? 0.62 : 1;
+  const infrastructureMultiplier = {
+    saas: 1,
+    marketplace: 0.85,
+    creator: 0.9,
+    agency: 0.55,
+    ai: 1.8,
+  }[startup.startupType] || 1;
   const maintenance = products.reduce((sum, product) => {
     if (!product.active) return sum + 10;
-    const usageLoad = Math.min(180, product.users * 0.035);
-    const debtLoad = product.technicalDebt * 0.85;
+    const usageLoad = 10 * Math.sqrt(Math.max(0, product.users)) * infrastructureMultiplier;
+    const debtLoad = product.technicalDebt * (0.85 + Math.sqrt(Math.max(0, product.users)) / 180);
     const productLoad = 34 + activeCount * 8 + usageLoad + debtLoad;
     return sum + productLoad;
   }, 0);
   return Math.round(maintenance * earlyDiscount * pauseDiscount);
 }
 
-function burnSources() {
+function burnSources({ stageIndex = currentCompanyStageIndex() } = {}) {
   ensureEconomyState();
   const opsDiscount = clamp((state.team?.roles?.operations || 0) * 0.04, 0, 0.14);
-  const team = Math.round(getTeamCost() * (1 - opsDiscount));
+  const payrollScale = 1 + clamp(stageIndex, 0, companyStages.length - 1) * 0.08;
+  const earlyPayrollMultiplier = state.week <= 10 ? 0.72 : state.week <= 25 ? 0.86 : 1;
+  const team = Math.round(getTeamCost() * payrollScale * earlyPayrollMultiplier * (1 - opsDiscount));
   const product = calculateProductMaintenanceCost();
   const marketing = Math.max(0, Math.round(state.economy.marketingSpend || 0));
   const optional = Math.max(0, Math.round(state.economy.optionalExpenses || 0));
-  const total = Math.max(120, team + product + marketing + optional);
-  return { team, product, marketing, optional, total };
+  const cogsRate = startupCogsRates[startup.startupType] ?? 0.15;
+  const cogs = Math.round(Math.max(0, Number(state.revenue) || 0) * cogsRate);
+  const overhead = calculateScaleOverhead(stageIndex);
+  const scale = cogs + overhead;
+  const total = Math.round(finiteGameNumber(team + product + marketing + optional + scale, 120, 120, MAX_SAFE_GAME_VALUE));
+  return { team, product, marketing, optional, cogs, overhead, scale, total };
 }
 
 function calculateCurrentBurnRate() {
@@ -2241,13 +2946,13 @@ function routeBurnEffect(effects, label = "") {
   if (!delta) return;
 
   if (delta > 0) {
-    const earlyMultiplier = state.week <= 10 ? 0.22 : state.week <= 25 ? 0.36 : 0.5;
+    const earlyMultiplier = state.week <= 10 ? 0.55 : state.week <= 25 ? 0.7 : 0.85;
     const routed = Math.max(10, Math.round(delta * earlyMultiplier));
     const marketingText = `${label}`.toLowerCase();
     if (marketingText.includes("marketing") || marketingText.includes("campaign") || marketingText.includes("ads") || marketingText.includes("growth")) {
-      state.economy.marketingSpend = clamp((state.economy.marketingSpend || 0) + routed, 0, 1600);
+      state.economy.marketingSpend = clamp((state.economy.marketingSpend || 0) + routed, 0, MAX_SAFE_GAME_VALUE);
     } else {
-      state.economy.optionalExpenses = clamp((state.economy.optionalExpenses || 0) + routed, 0, 1800);
+      state.economy.optionalExpenses = clamp((state.economy.optionalExpenses || 0) + routed, 0, MAX_SAFE_GAME_VALUE);
     }
   } else {
     reduceBurnSources(Math.abs(delta));
@@ -2269,15 +2974,116 @@ function reduceBurnSources(amount) {
 
 function decayBurnSourcesForNewWeek() {
   ensureEconomyState();
-  state.economy.marketingSpend = Math.max(0, Math.round((state.economy.marketingSpend || 0) * 0.78));
-  state.economy.optionalExpenses = Math.max(0, Math.round((state.economy.optionalExpenses || 0) * 0.9));
+  state.economy.marketingSpend = Math.max(0, Math.round((state.economy.marketingSpend || 0) * 0.88));
+  state.economy.optionalExpenses = Math.max(0, Math.round((state.economy.optionalExpenses || 0) * 0.97));
   if (state.economy.developmentPausedWeeks > 0) {
     state.economy.developmentPausedWeeks -= 1;
   }
   state.burnRate = calculateCurrentBurnRate();
 }
 
+function calculateOperatingPressureSnapshot() {
+  const team = state.team?.roles || {};
+  const stageIndex = currentCompanyStageIndex();
+  const userLoad = Math.log10(Math.max(1, Number(state.users) || 0) + 10) * 12;
+  const productLoad = activeProducts().length * 9;
+  const capacity = (team.engineer || 0) * 8 + (team.operations || 0) * 14 + (Number(state.team?.efficiency) || 0) * 0.12;
+  const overloadRisk = clamp(Math.round(stageIndex * 11 + userLoad + productLoad - capacity), 0, 100);
+  const runwayWeeks = calculateRunway(state.cash, calculateCurrentBurnRate());
+  const runwayRisk = runwayWeeks <= 2 ? 100 : runwayWeeks <= 4 ? 78 : runwayWeeks <= 8 ? 48 : runwayWeeks <= 12 ? 24 : 5;
+  const churnRisk = calculateChurnRisk();
+  const rawPressure =
+    churnRisk * 0.24
+      + (Number(state.market?.competitorPressure) || 0) * 0.22
+      + (Number(state.product?.technicalDebt) || 0) * 0.18
+      + (100 - (Number(state.team?.morale) || 0)) * 0.14
+      + runwayRisk * 0.12
+      + overloadRisk * 0.1;
+  return { pressure: clamp(Math.round(rawPressure), 0, 100), overloadRisk, runwayRisk };
+}
+
+function criticalConditionCount() {
+  const runwayWeeks = calculateRunway(state.cash, calculateCurrentBurnRate());
+  const financialDistress = runwayWeeks <= 2 || (state.revenue < state.burnRate && runwayWeeks < 3);
+  return [
+    financialDistress,
+    state.reputation <= 15,
+    productHealth() === "Broken",
+    state.team.morale <= 15,
+  ].filter(Boolean).length;
+}
+
+function applyWeeklyOperatingPressure() {
+  const balance = ensureBalanceState();
+  if (Number(balance.lastPressureWeek) === Number(state.week)) return;
+
+  state.growthRate = clamp(
+    Math.round(state.growthRate * (state.growthRate >= 0 ? 0.72 : 0.82)),
+    -35,
+    MAX_GROWTH_RATE,
+  );
+
+  const snapshot = calculateOperatingPressureSnapshot();
+  balance.pressure = clamp(Math.round((Number(balance.pressure) || snapshot.pressure) * 0.65 + snapshot.pressure * 0.35), 0, 100);
+  balance.overloadRisk = snapshot.overloadRisk;
+  balance.lastPressureWeek = state.week;
+
+  const targetCompetition = clamp(
+    20
+      + currentCompanyStageIndex() * 8
+      + Math.log10(Math.max(0, state.users) + 10) * 5
+      + Math.max(0, state.growthRate) / 3
+      - (Number(state.market?.differentiation) || 0) * 0.35
+      - (Number(state.team?.roles?.operations) || 0) * 3,
+    15,
+    95,
+  );
+  state.market.competitorPressure = clamp(
+    Math.round(state.market.competitorPressure + (targetCompetition - state.market.competitorPressure) * 0.25),
+    0,
+    100,
+  );
+
+  if (balance.pressure >= 55) {
+    const severity = balance.pressure >= 80 ? 2 : 1;
+    applyProductEntityDeltas({ technicalDebt: severity, stability: -severity });
+    state.team.morale = clamp(state.team.morale - severity, 0, 100);
+  }
+  if (balance.pressure >= 80) {
+    state.reputation = clamp(state.reputation - 1, 0, 100);
+  }
+
+  syncAggregateProductStats();
+  state.burnRate = calculateCurrentBurnRate();
+  const criticalConditions = criticalConditionCount();
+  balance.criticalWeeks = criticalConditions >= 2 && state.week > balance.graceUntilWeek
+    ? balance.criticalWeeks + 1
+    : 0;
+}
+
+function decayPausedProductsForNewWeek() {
+  const products = state.product?.products || [];
+  products.forEach((product) => {
+    if (product.active) return;
+    const previousUsers = Math.max(0, Number(product.users) || 0);
+    product.users = Math.max(0, Math.round(previousUsers * 0.92));
+    product.growth = product.users - previousUsers;
+    product.revenue = 0;
+  });
+}
+
+function canUseSystemActions() {
+  return Boolean(state.runId) && !pendingResolution && !isAdvancingWeek && !isArchiveOnlyView;
+}
+
 function hireRole(role) {
+  if (!canUseSystemActions()) return;
+  state.team.lastRoleActionWeek ||= {};
+  if (state.team.lastRoleActionWeek[role] === state.week) {
+    state.team.message = `You already changed the ${teamRoles[role].label.toLowerCase()} team this week.`;
+    renderTeamView();
+    return;
+  }
   const runwayWeeks = calculateRunwayWeeks();
   const cost = teamRoles[role].cost;
   if (state.cash < cost * 3 || runwayWeeks <= 4) {
@@ -2285,8 +3091,14 @@ function hireRole(role) {
     renderTeamView();
     return;
   }
+  if (!canSpendFocus(2)) {
+    state.team.message = "Hiring needs 2 Focus. Advance the week or choose fewer management moves.";
+    renderTeamView();
+    return;
+  }
 
   const before = captureStats();
+  spendFocus(2);
   state.team.roles[role] += 1;
   const onboardingCost = Math.round(cost * 0.45);
   state.cash -= onboardingCost;
@@ -2294,6 +3106,7 @@ function hireRole(role) {
   const effects = roleHireEffects(role);
   applyEffects(effects);
   applyRoleStateEffects(role, "hire");
+  state.team.lastRoleActionWeek[role] = state.week;
   recalculateDerivedState();
   state.team.message = `${teamRoles[role].label} hired. Burn increased by ${formatMoney(cost)} per week.`;
   recordSystemAction({
@@ -2308,14 +3121,32 @@ function hireRole(role) {
 }
 
 function fireRole(role) {
+  if (!canUseSystemActions()) return;
+  state.team.lastRoleActionWeek ||= {};
+  if (state.team.lastRoleActionWeek[role] === state.week) {
+    state.team.message = `You already changed the ${teamRoles[role].label.toLowerCase()} team this week.`;
+    renderTeamView();
+    return;
+  }
   if (state.team.roles[role] <= 0) {
     state.team.message = `No ${teamRoles[role].label.toLowerCase()} to remove.`;
+    renderTeamView();
+    return;
+  }
+  if (getTeamSize() <= 1) {
+    state.team.message = "The founding operator cannot be removed. Hire coverage before changing this role.";
+    renderTeamView();
+    return;
+  }
+  if (!canSpendFocus(2)) {
+    state.team.message = "A team change needs 2 Focus.";
     renderTeamView();
     return;
   }
 
   const cost = teamRoles[role].cost;
   const before = captureStats();
+  spendFocus(2);
   state.team.roles[role] -= 1;
   state.team.morale = clamp(state.team.morale - 8, 0, 100);
   state.team.efficiency = clamp(calculateTeamEfficiency() - 5, 25, 100);
@@ -2329,6 +3160,7 @@ function fireRole(role) {
   });
   applyEffects(effects);
   applyRoleStateEffects(role, "fire");
+  state.team.lastRoleActionWeek[role] = state.week;
   recalculateDerivedState();
   state.team.message = `${teamRoles[role].label} removed. Burn dropped, but morale took a hit.`;
   recordSystemAction({
@@ -2348,7 +3180,7 @@ function roleHireEffects(role) {
     engineer: { productQuality: 2, reputation: 1, growthRate: -1 },
     designer: { productQuality: 1, reputation: 2, users: 2 },
     marketer: { users: productWeak ? 3 : 8, growthRate: 2, reputation: productWeak ? -2 : 0 },
-    sales: { revenue: 220, cash: 120, growthRate: -1 },
+    sales: { revenue: 0, cash: 0, growthRate: -1 },
     operations: { burnRate: -55, reputation: 1, productQuality: 1 },
   };
   return normalizeEffects(map[role]);
@@ -2356,22 +3188,11 @@ function roleHireEffects(role) {
 
 function applyRoleStateEffects(role, action) {
   const direction = action === "hire" ? 1 : -1;
-  const product = activeProduct();
   if (role === "engineer") {
-    state.product.stability = clamp(state.product.stability + 2 * direction, 0, 100);
-    state.product.technicalDebt = clamp(state.product.technicalDebt - 2 * direction, 0, 100);
-    if (product) {
-      product.stability = clamp(product.stability + 2 * direction, 0, 100);
-      product.technicalDebt = clamp(product.technicalDebt - 2 * direction, 0, 100);
-    }
+    applyProductEntityDeltas({ stability: 2 * direction, technicalDebt: -2 * direction });
   }
   if (role === "designer") {
-    state.product.ux = clamp(state.product.ux + 3 * direction, 0, 100);
-    if (product) {
-      product.ux = clamp((product.ux ?? product.productQuality) + 3 * direction, 0, 100);
-      product.productQuality = clamp(product.productQuality + direction, 0, 100);
-      product.quality = product.productQuality;
-    }
+    applyProductEntityDeltas({ ux: 3 * direction });
   }
   if (role === "marketer") {
     state.market.demand = clamp(state.market.demand + 3 * direction, 0, 100);
@@ -2381,10 +3202,7 @@ function applyRoleStateEffects(role, action) {
     state.market.pricingPower = clamp(state.market.pricingPower + 2 * direction, 0, 100);
   }
   if (role === "operations") {
-    state.product.stability = clamp(state.product.stability + 1 * direction, 0, 100);
-    if (product) {
-      product.stability = clamp(product.stability + 1 * direction, 0, 100);
-    }
+    applyProductEntityDeltas({ stability: 1 * direction });
     state.market.competitorPressure = clamp(state.market.competitorPressure - 2 * direction, 0, 100);
   }
 }
@@ -2405,51 +3223,39 @@ function calculateProductEffects() {
   const debtPenalty = product.technicalDebt > 70 ? 5 : product.technicalDebt > 50 ? 2 : 0;
   const qualityDrag = state.productQuality < 40 ? 4 : 0;
   return normalizeEffects({
-    users: Math.round((product.ux - 50) / 11 + (product.featureDepth - 35) / 14 - debtPenalty - qualityDrag),
-    revenue: Math.round((product.featureDepth - 35) * 5.5),
-    cash: 0,
-    burnRate: 0,
-    reputation: Math.round((product.ux - 50) / 14 + (product.stability - 55) / 16 - debtPenalty),
-    productQuality: Math.round((product.stability + product.ux + product.featureDepth - product.technicalDebt) / 70 - 2),
-    growthRate: Math.round((product.featureDepth - 35) / 24 - debtPenalty),
+    reputation: -Math.max(0, debtPenalty - 1),
+    productQuality: product.stability < 38 || product.technicalDebt > 78 ? -1 : 0,
+    growthRate: -(debtPenalty + qualityDrag),
   });
 }
 
 function updateProductPressure(delta) {
-  const product = activeProduct();
   if (delta.growthRate > 5 || delta.users > 20) {
-    state.product.technicalDebt = clamp(state.product.technicalDebt + 2, 0, 100);
-    state.product.stability = clamp(state.product.stability - 1, 0, 100);
-    if (product) {
+    activeProducts().forEach((product) => {
       product.technicalDebt = clamp(product.technicalDebt + 2, 0, 100);
       product.stability = clamp(product.stability - 1, 0, 100);
-    }
+    });
   }
-  if (state.product.technicalDebt > 70) {
-    state.product.stability = clamp(state.product.stability - 2, 0, 100);
-    if (product) {
-      product.stability = clamp(product.stability - 2, 0, 100);
-    }
-  }
+  activeProducts().forEach((product) => {
+    if (product.technicalDebt > 70) product.stability = clamp(product.stability - 2, 0, 100);
+  });
+  syncAggregateProductStats();
   state.product.message = productHealth() === "Broken"
     ? "Product risk is high. Stabilize before scaling."
     : "";
 }
 
 function applyProductUpgrade(upgradeKey) {
+  if (!canUseSystemActions()) return;
   const upgrade = productUpgrades[upgradeKey];
   if (!upgrade) return;
-  ensureProductPortfolioState();
-  const product = activeProduct();
-  const roadmap = activeProductRoadmap();
-  if (!product) return;
-  if (roadmap.inProgress.length >= 2) {
+  if (state.product.roadmap.inProgress.length >= 2) {
     state.product.message = "Team is at full capacity.";
     renderProductView();
     return;
   }
-  if (roadmap.inProgress.some((item) => item.key === upgradeKey)) {
-    state.product.message = `${upgrade.label} is already in progress for ${product.name}.`;
+  if (state.product.roadmap.inProgress.some((item) => item.key === upgradeKey)) {
+    state.product.message = `${upgrade.label} is already in progress.`;
     renderProductView();
     return;
   }
@@ -2458,32 +3264,36 @@ function applyProductUpgrade(upgradeKey) {
     renderProductView();
     return;
   }
+  if (!canSpendFocus(1)) {
+    state.product.message = "Starting roadmap work needs 1 Focus.";
+    renderProductView();
+    return;
+  }
 
   const before = captureStats();
+  spendFocus(1);
   state.cash -= upgrade.cost;
   const totalWork = effectiveWorkUnits(upgradeKey);
-  roadmap.inProgress.push({
+  state.product.roadmap.inProgress.push({
     key: upgradeKey,
     label: upgrade.label,
     workTotal: totalWork,
     workRemaining: totalWork,
     startedWeek: state.week,
-    productId: product.id,
   });
-  roadmap.backlog = roadmap.backlog.filter((item) => item !== upgrade.label);
-  if (!roadmap.backlog.includes(upgrade.label)) {
-    roadmap.backlog.push(upgrade.label);
+  state.product.roadmap.backlog = state.product.roadmap.backlog.filter((item) => item !== upgrade.label);
+  if (!state.product.roadmap.backlog.includes(upgrade.label)) {
+    state.product.roadmap.backlog.push(upgrade.label);
   }
-  if (roadmap.inProgress.length >= 2 && calculateDevCapacity() < 3) {
-    product.technicalDebt = clamp(product.technicalDebt + 2, 0, 100);
+  if (state.product.roadmap.inProgress.length >= 2 && calculateDevCapacity() < 3) {
+    applyProductEntityDeltas({ technicalDebt: 2 });
     state.team.morale = clamp(state.team.morale - 4, 0, 100);
   }
-  product.message = `${upgrade.label} started. ${totalWork} work units remaining.`;
   recalculateDerivedState();
-  state.product.message = `${product.name}: ${upgrade.label} started. ${totalWork} work units remaining.`;
+  state.product.message = `${upgrade.label} started. ${totalWork} work units remaining.`;
   recordSystemAction({
     before,
-    title: `Started ${upgrade.label} for ${product.name}`,
+    title: `Started ${upgrade.label}`,
     decision: `Start ${upgrade.label}`,
     insight: `You committed ${formatMoney(upgrade.cost)} and ${totalWork} work units. Effects apply only when the work ships.`,
     type: "Product Event",
@@ -2493,12 +3303,12 @@ function applyProductUpgrade(upgradeKey) {
 }
 
 function applyUpgradeToPrimaryProduct(upgradeKey, upgrade) {
-  const target = activeProduct() || activeProducts().sort((a, b) => b.users - a.users)[0];
+  const target = activeProducts().sort((a, b) => b.users - a.users)[0];
   if (!target) return;
+  target.ux = inferredProductUx(target);
   target.productQuality = clamp(target.productQuality + upgrade.effects.quality, 0, 100);
-  target.quality = target.productQuality;
-  target.ux = clamp((target.ux ?? target.productQuality) + upgrade.effects.ux, 0, 100);
   target.stability = clamp(target.stability + upgrade.effects.stability, 0, 100);
+  target.ux = clamp(target.ux + upgrade.effects.ux, 0, 100);
   target.featureDepth = clamp(target.featureDepth + upgrade.effects.featureDepth, 0, 100);
   target.technicalDebt = clamp(target.technicalDebt + upgrade.effects.technicalDebt, 0, 100);
   target.users = Math.max(0, target.users + upgrade.effects.users);
@@ -2508,11 +3318,7 @@ function applyUpgradeToPrimaryProduct(upgradeKey, upgrade) {
 }
 
 function progressProductDevelopment() {
-  ensureProductPortfolioState();
-  const productWork = (state.product?.products || [])
-    .map((product) => ({ product, roadmap: normalizeProductRoadmap(product.roadmap) }))
-    .filter(({ roadmap }) => roadmap.inProgress.length);
-  const inProgress = productWork.flatMap(({ product, roadmap }) => roadmap.inProgress.map((item) => ({ item, product, roadmap })));
+  const inProgress = state.product?.roadmap?.inProgress || [];
   if (!inProgress.length) return [];
 
   const completed = [];
@@ -2520,16 +3326,16 @@ function progressProductDevelopment() {
   const workPerUpgrade = capacity / inProgress.length;
   const overloaded = inProgress.length >= 2 && capacity < 3;
 
-  inProgress.forEach(({ item, product }) => {
+  inProgress.forEach((item) => {
     const delayRoll = overloaded && rng() < 0.28;
     const workDone = delayRoll ? Math.max(0.2, workPerUpgrade * 0.55) : workPerUpgrade;
     item.workRemaining = Math.max(0, Number((item.workRemaining - workDone).toFixed(1)));
     if (delayRoll) {
-      product.technicalDebt = clamp(product.technicalDebt + 1, 0, 100);
+      applyProductEntityDeltas({ technicalDebt: 1 });
       state.team.morale = clamp(state.team.morale - 1, 0, 100);
     }
     if (item.workRemaining <= 0) {
-      completed.push({ item, product });
+      completed.push(item);
     }
   });
 
@@ -2537,51 +3343,38 @@ function progressProductDevelopment() {
     state.team.morale = clamp(state.team.morale - 2, 0, 100);
   }
 
-  completed.forEach(({ item, product }) => completeProductUpgrade(item, product));
-  productWork.forEach(({ product, roadmap }) => {
-    roadmap.inProgress = roadmap.inProgress.filter((item) => item.workRemaining > 0);
-    product.roadmap = roadmap;
-  });
-  syncActiveRoadmapReference();
-  return completed.map(({ item }) => item);
+  completed.forEach((item) => completeProductUpgrade(item));
+  state.product.roadmap.inProgress = inProgress.filter((item) => item.workRemaining > 0);
+  return completed;
 }
 
-function completeProductUpgrade(item, product = activeProduct()) {
+function completeProductUpgrade(item) {
   const upgrade = productUpgrades[item.key];
-  if (!upgrade || !product) return;
+  if (!upgrade) return;
   const before = captureStats();
-  product.ux = clamp((product.ux ?? product.productQuality) + upgrade.effects.ux, 0, 100);
-  product.stability = clamp(product.stability + upgrade.effects.stability, 0, 100);
-  product.featureDepth = clamp(product.featureDepth + upgrade.effects.featureDepth, 0, 100);
-  product.technicalDebt = clamp(product.technicalDebt + upgrade.effects.technicalDebt, 0, 100);
-  product.productQuality = clamp(product.productQuality + upgrade.effects.quality, 0, 100);
-  product.quality = product.productQuality;
   state.reputation = clamp(state.reputation + upgrade.effects.reputation, 0, 100);
-  product.users = Math.max(0, product.users + upgrade.effects.users);
-  state.growthRate = clamp(state.growthRate + upgrade.effects.growthRate, -35, 80);
-  applyProductUpgradeCrossEffects(item.key, upgrade, product);
-  product.roadmap = normalizeProductRoadmap(product.roadmap);
-  product.roadmap.shipped.unshift(`Week ${state.week}: ${upgrade.label}`);
-  product.completedUpgradeIds = product.completedUpgradeIds || [];
-  product.completedUpgradeIds.push(`${item.key}-${state.week}`);
-  product.message = `${upgrade.label} completed and shipped.`;
+  state.growthRate = clamp(state.growthRate + upgrade.effects.growthRate, -35, MAX_GROWTH_RATE);
+  applyUpgradeToPrimaryProduct(item.key, upgrade);
+  applyProductUpgradeCrossEffects(item.key, upgrade);
+  state.product.roadmap.shipped.unshift(`Week ${state.week}: ${upgrade.label}`);
+  state.product.completedUpgradeIds.push(`${item.key}-${state.week}`);
   recalculateDerivedState();
-  state.product.message = `${product.name}: ${upgrade.label} completed and shipped.`;
+  state.product.message = `${upgrade.label} completed and shipped.`;
   recordSystemAction({
     before,
-    title: `Shipped ${upgrade.label} for ${product.name}`,
+    title: `Shipped ${upgrade.label}`,
     decision: upgrade.label,
     insight: productUpgradeInsight(item.key),
     type: "Product Event",
   });
 }
 
-function applyProductUpgradeCrossEffects(upgradeKey, upgrade, product = activeProduct()) {
+function applyProductUpgradeCrossEffects(upgradeKey, upgrade) {
   if (upgradeKey === "onboarding" || upgradeKey === "uiux") {
     state.market.demand = clamp(state.market.demand + (state.market.demand > 60 ? 2 : 4), 0, 100);
     state.market.differentiation = clamp(state.market.differentiation + 2, 0, 100);
     if (state.market.demand >= 60) {
-      state.growthRate = clamp(state.growthRate + 1, -35, 80);
+      state.growthRate = clamp(state.growthRate + 1, -35, MAX_GROWTH_RATE);
     }
   }
   if (upgradeKey === "bugs" || upgradeKey === "performance" || upgradeKey === "debt") {
@@ -2591,7 +3384,7 @@ function applyProductUpgradeCrossEffects(upgradeKey, upgrade, product = activePr
   if (upgradeKey === "coreFeature") {
     state.market.demand = clamp(state.market.demand + 3, 0, 100);
     state.market.competitorPressure = clamp(state.market.competitorPressure + 4, 0, 100);
-    if ((product?.stability ?? state.product.stability) < 55) {
+    if (state.product.stability < 55) {
       state.reputation = clamp(state.reputation - 3, 0, 100);
     }
   }
@@ -2609,18 +3402,10 @@ function productUpgradeInsight(upgradeKey) {
   return insights[upgradeKey] || "Product work changed both product health and future market outcomes.";
 }
 
-function iconMarkup(iconName, className = "ui-icon") {
-  const safeName = String(iconName || "diamond").replace(/[^a-zA-Z0-9-]/g, "");
-  return `<svg class="${className}" aria-hidden="true"><use href="#icon-${safeName}"></use></svg>`;
-}
-
 function createProduct(formData) {
-  ensureProductPortfolioState();
-  const requestedModelKey = formData.get("pricingModel") || activeProduct()?.pricingModel || "freemium";
-  const modelKey = pricingModels[requestedModelKey] ? requestedModelKey : "freemium";
+  if (!canUseSystemActions()) return;
+  const modelKey = state.monetization.pricingModel || "freemium";
   const model = pricingModels[modelKey] || pricingModels.freemium;
-  const requestedPrice = Number(formData.get("productPrice"));
-  const startingPrice = clampProductPrice(modelKey, Number.isFinite(requestedPrice) && requestedPrice > 0 ? requestedPrice : model.basePrice);
   const name = formData.get("productName").trim() || `${startup.idea} ${state.product.nextProductId}`;
   const createCost = Math.round(360 + activeProducts().length * 180 + model.basePrice * 0.55);
   if (state.cash < createCost || calculateRunwayWeeks() <= 3) {
@@ -2628,37 +3413,37 @@ function createProduct(formData) {
     renderProductView();
     return;
   }
+  if (!canSpendFocus(2)) {
+    state.product.message = "Creating a product needs 2 Focus.";
+    renderProductView();
+    return;
+  }
 
   const before = captureStats();
+  spendFocus(2);
   const product = {
     id: state.product.nextProductId,
     name,
     type: formData.get("productType") || "Tool",
-    category: formData.get("productType") || "Tool",
-    targetSegment: formData.get("targetSegment").trim() || marketSegments[state.market.segment]?.label || "Founders",
-    pricingModel: modelKey,
-    price: startingPrice,
+    targetSegment: marketSegments[state.market.segment]?.label || "Founders",
+    pricingModel: state.monetization.pricingModel,
+    price: state.monetization.price,
+    useGlobalPricing: true,
     users: 0,
     revenue: 0,
     productQuality: 34,
-    quality: 34,
     stability: 42,
-    ux: 38,
+    ux: 40,
     featureDepth: 18,
     technicalDebt: 32 + activeProducts().length * 4,
     active: true,
-    status: "active",
     growth: 0,
-    roadmap: createProductRoadmap(),
-    completedUpgradeIds: [],
-    message: "",
+    lastManagedWeek: null,
   };
   state.product.nextProductId += 1;
   state.product.products.push(product);
-  state.product.activeProductId = product.id;
-  state.activeProductId = product.id;
   state.cash -= createCost;
-  product.technicalDebt = clamp(product.technicalDebt + 4, 0, 100);
+  applyProductEntityDeltas({ technicalDebt: 4 });
   state.team.morale = clamp(state.team.morale - (activeProducts().length > getTeamSize() ? 3 : 1), 0, 100);
   state.market.demand = clamp(state.market.demand + 2, 0, 100);
   recalculateDerivedState();
@@ -2669,7 +3454,7 @@ function createProduct(formData) {
     before,
     title: `Created ${product.name}`,
     decision: `Create ${product.type}`,
-    insight: "A new independent product opens a revenue path, but it starts rough and adds workload, burn, and technical debt.",
+    insight: "A new product opens a revenue path, but it starts rough and adds workload, burn, and technical debt.",
     type: "Product Event",
   });
   checkAchievements();
@@ -2677,13 +3462,26 @@ function createProduct(formData) {
 }
 
 function applyProductEntityAction(productId, action) {
-  if (action === "select") {
-    setActiveProduct(productId);
-    render();
-    return;
-  }
+  if (!canUseSystemActions()) return;
   const product = state.product.products.find((item) => item.id === Number(productId));
   if (!product) return;
+  const isPriceAction = action === "priceUp" || action === "priceDown";
+  if (isPriceAction && state.monetization.lastPriceChangeWeek === state.week) {
+    state.product.message = "The company already changed its global price this week. Advance the week before repricing again.";
+    renderProductView();
+    return;
+  }
+  if (product.lastManagedWeek === state.week) {
+    state.product.message = `${product.name} was already managed this week. Advance the week before changing it again.`;
+    renderProductView();
+    return;
+  }
+  const focusCost = focusCostForProductAction(action);
+  if (!canSpendFocus(focusCost)) {
+    state.product.message = `${actionLabel(action)} needs ${focusCost} Focus.`;
+    renderProductView();
+    return;
+  }
   const before = captureStats();
   let insight = "";
   let title = "";
@@ -2695,6 +3493,7 @@ function applyProductEntityAction(productId, action) {
       renderProductView();
       return;
     }
+    spendFocus(focusCost);
     state.cash -= cost;
     product.productQuality = clamp(product.productQuality + 7, 0, 100);
     product.stability = clamp(product.stability + 4, 0, 100);
@@ -2707,10 +3506,15 @@ function applyProductEntityAction(productId, action) {
 
   if (action === "priceUp") {
     const step = pricingStep(product);
-    const nextPrice = product.price + step;
-    setActiveProduct(product.id);
-    setActiveProductMonetization(product.pricingModel, nextPrice);
-    state.growthRate = clamp(state.growthRate - 1, -35, 80);
+    const nextPrice = clampGlobalPrice(state.monetization.pricingModel, state.monetization.price + step);
+    if (nextPrice === state.monetization.price) {
+      state.product.message = "The company price is already at the highest sensible level for this model.";
+      renderProductView();
+      return;
+    }
+    spendFocus(focusCost);
+    setGlobalMonetization(state.monetization.pricingModel, nextPrice);
+    state.growthRate = clamp(state.growthRate - 1, -35, MAX_GROWTH_RATE);
     state.market.pricingPower = clamp(state.market.pricingPower + 2, 0, 100);
     const pressure = productPricePressure(product);
     if (product.productQuality < 58 || product.stability < 55 || pressure.warning === "Too Expensive" || pressure.warning === "Enterprise Only") {
@@ -2723,9 +3527,15 @@ function applyProductEntityAction(productId, action) {
 
   if (action === "priceDown") {
     const step = pricingStep(product);
-    setActiveProduct(product.id);
-    setActiveProductMonetization(product.pricingModel, product.price - step);
-    state.growthRate = clamp(state.growthRate + 1, -35, 80);
+    const nextPrice = clampGlobalPrice(state.monetization.pricingModel, state.monetization.price - step);
+    if (nextPrice === state.monetization.price) {
+      state.product.message = "The company price is already at the lowest sensible level for this model.";
+      renderProductView();
+      return;
+    }
+    spendFocus(focusCost);
+    setGlobalMonetization(state.monetization.pricingModel, nextPrice);
+    state.growthRate = clamp(state.growthRate + 1, -35, MAX_GROWTH_RATE);
     state.market.demand = clamp(state.market.demand + 2, 0, 100);
     state.market.pricingPower = clamp(state.market.pricingPower - 2, 0, 100);
     title = `Lowered price for ${product.name}`;
@@ -2739,6 +3549,7 @@ function applyProductEntityAction(productId, action) {
       renderProductView();
       return;
     }
+    spendFocus(focusCost);
     state.cash -= cost;
     product.targetSegment = marketSegments[state.market.segment]?.label || product.targetSegment;
     product.productQuality = clamp(product.productQuality + 2, 0, 100);
@@ -2751,8 +3562,13 @@ function applyProductEntityAction(productId, action) {
   }
 
   if (action === "toggle") {
+    if (product.active && activeProducts().length <= 1) {
+      state.product.message = "Keep at least one product active so the company has users and revenue.";
+      renderProductView();
+      return;
+    }
+    spendFocus(focusCost);
     product.active = !product.active;
-    product.status = product.active ? "active" : "inactive";
     if (!product.active) {
       product.revenue = 0;
       product.growth = 0;
@@ -2764,6 +3580,10 @@ function applyProductEntityAction(productId, action) {
       : "Pausing the product reduces chaos and burn, but it stops that product's growth and revenue.";
   }
 
+  if (isPriceAction) {
+    state.monetization.lastPriceChangeWeek = state.week;
+  }
+  product.lastManagedWeek = state.week;
   recalculateDerivedState();
   state.product.message = title;
   recordSystemAction({
@@ -2778,7 +3598,7 @@ function applyProductEntityAction(productId, action) {
 }
 
 function pricingStep(product) {
-  const modelKey = product.pricingModel || "freemium";
+  const modelKey = state.monetization?.pricingModel || product.pricingModel;
   const model = pricingModels[modelKey] || pricingModels.freemium;
   if (modelKey === "enterprise") return 250;
   if (modelKey === "free") return 0;
@@ -2787,7 +3607,7 @@ function pricingStep(product) {
 
 function priceInsight(product) {
   const pressure = productPricePressure(product);
-  const model = pricingModels[product.pricingModel] || pricingModels.freemium;
+  const model = pricingModels[state.monetization?.pricingModel || product.pricingModel] || pricingModels.freemium;
   const conversion = Math.round(productConversionRate(product, model, marketFitRank(marketFitStatus())) * 1000) / 10;
   const warning = pressure.warning === "Fair Price"
     ? "Fair price for this audience."
@@ -2806,7 +3626,6 @@ function actionLabel(action) {
     priceDown: "Decrease price",
     pivot: "Pivot product",
     toggle: "Toggle product",
-    select: "Select product",
   }[action] || action;
 }
 
@@ -2818,23 +3637,11 @@ function calculateMarketEffects() {
   const market = state.market;
   if (!market) return normalizeEffects();
 
-  const segmentEffects = marketSegments[market.segment].effects;
-  const positioningEffects = marketPositionings[market.positioning].effects;
-  const pricingEffects = marketPricing[state.monetization?.pricingModel || market.pricing].effects;
-  const fitMultiplier = marketFitMultiplier();
-  const pressurePenalty = market.competitorPressure > 78 ? 0.55 : market.competitorPressure > 62 ? 0.75 : 1;
-  const differentiationShield = market.differentiation > 70 ? 4 : market.differentiation > 58 ? 2 : 0;
-  const weakFitDrag = marketFitStatus() === "Weak Fit" ? 5 : 0;
-  const base = combineEffects(segmentEffects, positioningEffects, pricingEffects);
-
+  const weakFitDrag = marketFitStatus() === "Weak Fit" ? 2 : 0;
+  const pressureDrag = market.competitorPressure > 78 ? 3 : market.competitorPressure > 62 ? 1 : 0;
   return normalizeEffects({
-    users: Math.round(base.users * fitMultiplier * pressurePenalty * 0.72 + (market.demand - 55) / 8 - weakFitDrag),
-    revenue: Math.round(base.revenue * (0.55 + market.pricingPower / 125)),
-    cash: 0,
-    burnRate: 0,
-    reputation: Math.round(base.reputation + (market.differentiation - market.competition) / 28 + differentiationShield - weakFitDrag / 2),
-    productQuality: base.productQuality,
-    growthRate: Math.round(base.growthRate + (market.demand - market.competition) / 22 + (market.differentiation - 50) / 30 - weakFitDrag / 2),
+    reputation: -(pressureDrag > 1 ? 1 : 0),
+    growthRate: -(weakFitDrag + pressureDrag),
   });
 }
 
@@ -2868,6 +3675,7 @@ function updateMarketPressure(delta) {
 }
 
 function applyMarketChoice(kind, key) {
+  if (!canUseSystemActions()) return;
   if (!state.market) return;
   const map = kind === "segment" ? marketSegments : kind === "positioning" ? marketPositionings : marketPricing;
   const option = map[key];
@@ -2879,14 +3687,34 @@ function applyMarketChoice(kind, key) {
     renderMarketView();
     return;
   }
+  if (kind === "pricing" && state.monetization.lastPriceChangeWeek === state.week) {
+    state.market.message = "The company already changed its global price this week. Advance the week before repricing again.";
+    renderMarketView();
+    return;
+  }
+  state.market.lastChoiceWeek ||= {};
+  if (state.market.lastChoiceWeek[kind] === state.week) {
+    state.market.message = `You already changed ${kindLabel(kind)} this week. Advance the week before changing it again.`;
+    renderMarketView();
+    return;
+  }
+  const focusCost = kind === "positioning" ? 1 : 2;
+  if (!canSpendFocus(focusCost)) {
+    state.market.message = `Changing ${kindLabel(kind)} needs ${focusCost} Focus.`;
+    renderMarketView();
+    return;
+  }
 
   const previousKey = kind === "pricing" ? state.monetization.pricingModel : state.market[kind];
   const previousOption = map[previousKey];
   const before = captureStats();
+  spendFocus(focusCost);
   state.market[kind] = key;
   if (kind === "pricing") {
     setGlobalMonetization(key, pricingModels[key].basePrice, `Changed pricing model to ${option.label}.`);
+    state.monetization.lastPriceChangeWeek = state.week;
   }
+  state.market.lastChoiceWeek[kind] = state.week;
   applyMarketStatDelta(relativeMarketStats(previousOption?.stats || {}, option.stats || {}));
   const immediateEffects = scaleEffects(option.effects || {}, kind === "pricing" ? 0.36 : 0.24);
   if (kind === "pricing" && key === "oneTime" && state.market.segment === "students") {
@@ -2894,7 +3722,7 @@ function applyMarketChoice(kind, key) {
     immediateEffects.users -= 3;
   }
   if (kind === "pricing" && key === "enterprise") {
-    state.economy.optionalExpenses = clamp((state.economy.optionalExpenses || 0) + 45, 0, 1800);
+    state.economy.optionalExpenses = clamp((state.economy.optionalExpenses || 0) + 45, 0, MAX_SAFE_GAME_VALUE);
   }
   applyEffects(immediateEffects);
   recalculateDerivedState();
@@ -2934,15 +3762,29 @@ function relativeMarketStats(previousStats, nextStats) {
 }
 
 function applyMarketAction(actionKey) {
+  if (!canUseSystemActions()) return;
   const action = marketActions[actionKey];
   if (!action || !state.market) return;
+  state.market.actionLastUsedWeek ||= {};
+  if (state.market.actionLastUsedWeek[actionKey] === state.week) {
+    state.market.message = `${action.label} was already completed this week.`;
+    renderMarketView();
+    return;
+  }
   if (state.cash < action.cost || calculateRunwayWeeks() <= 3) {
     state.market.message = "Not enough runway to safely run this market play.";
     renderMarketView();
     return;
   }
+  const focusCost = actionKey === "nicheCampaign" ? 2 : 1;
+  if (!canSpendFocus(focusCost)) {
+    state.market.message = `${action.label} needs ${focusCost} Focus.`;
+    renderMarketView();
+    return;
+  }
 
   const before = captureStats();
+  spendFocus(focusCost);
   const effects = normalizeEffects({
     ...action.effects,
     cash: (action.effects.cash || 0) - action.cost,
@@ -2950,6 +3792,7 @@ function applyMarketAction(actionKey) {
   applyMarketStatDelta(action.market);
   applyEffects(effects);
   applyMarketActionCrossEffects(actionKey);
+  state.market.actionLastUsedWeek[actionKey] = state.week;
   recalculateDerivedState();
   state.market.message = `${action.label} completed for ${formatMoney(action.cost)}.`;
   state.market.lastAction = action.impact;
@@ -2966,18 +3809,15 @@ function applyMarketAction(actionKey) {
 
 function applyMarketActionCrossEffects(actionKey) {
   if (actionKey === "interviews") {
-    state.product.ux = clamp(state.product.ux + 2, 0, 100);
-    state.product.featureDepth = clamp(state.product.featureDepth + 1, 0, 100);
+    applyProductEntityDeltas({ ux: 2, featureDepth: 1 });
   }
   if (actionKey === "competitors") {
     state.market.competitorPressure = clamp(state.market.competitorPressure - 2, 0, 100);
     state.market.differentiation = clamp(state.market.differentiation + 1, 0, 100);
   }
   if (actionKey === "pricing") {
-    if (state.market.pricingPower >= 55) {
-      state.revenue = Math.round(state.revenue + 180);
-    } else {
-      state.growthRate = clamp(state.growthRate - 1, -35, 80);
+    if (state.market.pricingPower < 55) {
+      state.growthRate = clamp(state.growthRate - 1, -35, MAX_GROWTH_RATE);
     }
   }
   if (actionKey === "nicheCampaign") {
@@ -3022,7 +3862,7 @@ function loadAchievements() {
 }
 
 function saveAchievements() {
-  localStorage.setItem(achievementStorageKey, JSON.stringify(state.achievements || {}));
+  return writeStorageJson(achievementStorageKey, state.achievements || {});
 }
 
 function readStorageJson(key, fallback) {
@@ -3041,6 +3881,327 @@ function writeStorageJson(key, value) {
   } catch {
     return false;
   }
+}
+
+function removeStorageItem(key) {
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function appendHistoryEntry(entry) {
+  state.history = Array.isArray(state.history) ? state.history : [];
+  state.totalDecisionCount = Math.max(Number(state.totalDecisionCount) || 0, state.history.length) + 1;
+  state.history.push(entry);
+  if (state.history.length > MAX_HISTORY_ENTRIES) {
+    state.history.splice(0, state.history.length - MAX_HISTORY_ENTRIES);
+  }
+  return entry;
+}
+
+function fullGameSavePayload() {
+  return {
+    version: FULL_SAVE_VERSION,
+    savedAt: new Date().toISOString(),
+    startup,
+    state,
+    activePrompt,
+    turnsUntilEvent,
+    pendingResolution,
+    rng: {
+      seedText: rngSeedText,
+      calls: rngCalls,
+    },
+    ui: {
+      activeCenterView,
+      activeTimelineFilter,
+      activeAchievementCategory,
+      activeAchievementRarity,
+      activeAchievementStatus,
+    },
+  };
+}
+
+function persistFullGameState() {
+  if (!state.runId || isArchiveOnlyView || endingPage?.classList.contains("is-hidden") === false) return false;
+  return writeStorageJson(fullGameStateStorageKey, fullGameSavePayload());
+}
+
+function loadFullGameState() {
+  const saved = readStorageJson(fullGameStateStorageKey, null);
+  if (!saved || saved.version !== FULL_SAVE_VERSION || !saved.startup || !saved.state?.runId) return null;
+  if (!saved.activePrompt?.title || !Array.isArray(saved.activePrompt?.decisions) || saved.activePrompt.decisions.length < 2) return null;
+  return saved;
+}
+
+function clearFullGameState() {
+  removeStorageItem(fullGameStateStorageKey);
+  renderContinueRunPanel();
+}
+
+function archiveFullGameStateAsAbandoned() {
+  const saved = loadFullGameState();
+  if (!saved?.state?.runId) return;
+  const summary = readStorageJson(currentRunStorageKey, null);
+  if (summary?.id !== saved.state.runId) return;
+  upsertRunHistory({
+    ...summary,
+    status: "abandoned",
+    endedAt: new Date().toISOString(),
+  });
+}
+
+function sanitizeRestoredGameNumbers() {
+  state.week = Math.round(finiteGameNumber(state.week, 1, 1, 1000000));
+  state.cash = Math.round(finiteGameNumber(state.cash, 0));
+  state.totalRevenue = Math.round(finiteGameNumber(state.totalRevenue, 0, 0, MAX_SAFE_GAME_VALUE));
+  state.users = Math.round(finiteGameNumber(state.users, 0, 0, MAX_SAFE_GAME_VALUE));
+  state.revenue = Math.round(finiteGameNumber(state.revenue, 0, 0, MAX_SAFE_GAME_VALUE));
+  state.burnRate = Math.round(finiteGameNumber(state.burnRate, 120, 0, MAX_SAFE_GAME_VALUE));
+  state.reputation = Math.round(finiteGameNumber(state.reputation, 50, 0, 100));
+  state.productQuality = Math.round(finiteGameNumber(state.productQuality, 50, 0, 100));
+  state.growthRate = Math.round(finiteGameNumber(state.growthRate, 0, -35, MAX_GROWTH_RATE));
+  state.peakUsers = Math.round(finiteGameNumber(state.peakUsers, state.users, 0, MAX_SAFE_GAME_VALUE));
+  state.streak = Math.round(finiteGameNumber(state.streak, 0, 0, 1000000));
+  state.bestStreak = Math.round(finiteGameNumber(state.bestStreak, state.streak, 0, 1000000));
+
+  Object.keys(teamRoles).forEach((role) => {
+    state.team.roles[role] = Math.round(finiteGameNumber(state.team.roles[role], 0, 0, 1000000));
+  });
+  state.team.morale = Math.round(finiteGameNumber(state.team.morale, 60, 0, 100));
+  state.team.efficiency = Math.round(finiteGameNumber(state.team.efficiency, 60, 25, 100));
+  state.team.layoffs = Math.round(finiteGameNumber(state.team.layoffs, 0, 0, 1000000));
+
+  ["marketSize", "demand", "competition", "differentiation", "pricingPower", "competitorPressure"].forEach((key) => {
+    state.market[key] = Math.round(finiteGameNumber(state.market[key], 50, 0, 100));
+  });
+  ["stability", "ux", "featureDepth", "technicalDebt"].forEach((key) => {
+    state.product[key] = Math.round(finiteGameNumber(state.product[key], 50, 0, 100));
+  });
+
+  state.product.products = Array.isArray(state.product.products) ? state.product.products.slice(0, 100) : [];
+  state.product.products.forEach((product) => {
+    product.id = Math.round(finiteGameNumber(product.id, 1, 1, 1000000));
+    product.users = Math.round(finiteGameNumber(product.users, 0, 0, MAX_SAFE_GAME_VALUE));
+    product.revenue = Math.round(finiteGameNumber(product.revenue, 0, 0, MAX_SAFE_GAME_VALUE));
+    product.growth = Math.round(finiteGameNumber(product.growth, 0));
+    product.productQuality = Math.round(finiteGameNumber(product.productQuality, 50, 0, 100));
+    product.stability = Math.round(finiteGameNumber(product.stability, 50, 0, 100));
+    product.ux = Math.round(finiteGameNumber(product.ux, inferredProductUx(product), 0, 100));
+    product.featureDepth = Math.round(finiteGameNumber(product.featureDepth, 25, 0, 100));
+    product.technicalDebt = Math.round(finiteGameNumber(product.technicalDebt, 25, 0, 100));
+  });
+  if (state.product.products.length && !state.product.products.some((product) => product.active)) {
+    state.product.products[0].active = true;
+  }
+  state.product.nextProductId = Math.round(finiteGameNumber(state.product.nextProductId, state.product.products.length + 1, 1, 1000001));
+  if (activeProducts().length) syncAggregateProductStats();
+  state.peakUsers = Math.max(state.peakUsers, state.users);
+
+  state.economy.marketingSpend = Math.round(finiteGameNumber(state.economy.marketingSpend, 0, 0, MAX_SAFE_GAME_VALUE));
+  state.economy.optionalExpenses = Math.round(finiteGameNumber(state.economy.optionalExpenses, 0, 0, MAX_SAFE_GAME_VALUE));
+  state.economy.developmentPausedWeeks = Math.round(finiteGameNumber(state.economy.developmentPausedWeeks, 0, 0, 1000));
+  state.monetization.price = finiteGameNumber(state.monetization.price, pricingModels[state.monetization.pricingModel]?.basePrice || 0, 0, MAX_SAFE_GAME_VALUE);
+
+  state.company.valuation = Math.round(finiteGameNumber(state.company.valuation, 0, 0, MAX_SAFE_GAME_VALUE));
+  state.company.smoothedWeeklyRevenue = Math.round(finiteGameNumber(state.company.smoothedWeeklyRevenue, 0, 0, MAX_SAFE_GAME_VALUE));
+  state.company.lastValuationWeek = state.company.lastValuationWeek === null
+    ? null
+    : Math.round(finiteGameNumber(state.company.lastValuationWeek, state.week, 1, state.week));
+  Object.keys(createInitialValuationBreakdown()).forEach((key) => {
+    const fallback = key === "revenueMultiple" ? 0 : 0;
+    state.company.valuationBreakdown[key] = finiteGameNumber(state.company.valuationBreakdown[key], fallback, 0, MAX_SAFE_GAME_VALUE);
+  });
+  const readiness = state.company.readiness;
+  readiness.targetStageIndex = Math.round(finiteGameNumber(readiness.targetStageIndex, Math.min(companyStages.length - 1, state.company.highestStageIndex + 1), 1, companyStages.length - 1));
+  readiness.weeksHeld = Math.round(finiteGameNumber(readiness.weeksHeld, 0, 0, 1000));
+  readiness.pillarsPassed = Math.round(finiteGameNumber(readiness.pillarsPassed, 0, 0, 3));
+  readiness.resilience = Math.round(finiteGameNumber(readiness.resilience, 0, 0, 100));
+  readiness.projectedRunway = Math.round(finiteGameNumber(readiness.projectedRunway, 0, 0, 99));
+
+  state.balance.focusSpent = Math.round(finiteGameNumber(state.balance.focusSpent, 0, 0, 5));
+  state.balance.focusMax = Math.round(finiteGameNumber(state.balance.focusMax, calculateWeeklyFocusCapacity(), 2, 5));
+  state.balance.focusWeek = Math.round(finiteGameNumber(state.balance.focusWeek, state.week, 1, state.week));
+  state.balance.pressure = Math.round(finiteGameNumber(state.balance.pressure, 0, 0, 100));
+  state.balance.overloadRisk = Math.round(finiteGameNumber(state.balance.overloadRisk, 0, 0, 100));
+  state.balance.criticalWeeks = Math.round(finiteGameNumber(state.balance.criticalWeeks, 0, 0, 1000));
+  state.balance.graceUntilWeek = Math.round(finiteGameNumber(state.balance.graceUntilWeek, state.week, 0, state.week + 2));
+  state.balance.lastPressureWeek = state.balance.lastPressureWeek === null
+    ? null
+    : Math.round(finiteGameNumber(state.balance.lastPressureWeek, state.week, 1, state.week));
+}
+
+function ensureRestoredStateSchema() {
+  const restoredCompany = state.company || {};
+  const needsValuationMigration = Number(restoredCompany.valuationModelVersion) !== COMPANY_VALUATION_MODEL_VERSION;
+  const needsBalanceMigration = Number(state.balance?.version) !== BALANCE_MODEL_VERSION;
+  state.company = {
+    ...createInitialCompanyState(),
+    ...restoredCompany,
+    valuationBreakdown: {
+      ...createInitialValuationBreakdown(),
+      ...(restoredCompany.valuationBreakdown || {}),
+    },
+    readiness: {
+      ...createInitialReadinessState(Math.min(companyStages.length - 1, (Number(restoredCompany.highestStageIndex) || Number(restoredCompany.stageIndex) || 0) + 1)),
+      ...(restoredCompany.readiness || {}),
+    },
+  };
+  state.company.valuation = Math.max(0, Number(state.company.valuation) || 0);
+  state.company.smoothedWeeklyRevenue = Math.max(0, Number(state.company.smoothedWeeklyRevenue) || 0);
+  state.company.highestStageIndex = clamp(
+    Math.max(Number(state.company.highestStageIndex) || 0, Number(state.company.stageIndex) || 0),
+    0,
+    companyStages.length - 1,
+  );
+  state.company.stageIndex = state.company.highestStageIndex;
+  state.company.stage = companyStages[state.company.highestStageIndex].id;
+  state.ai = {
+    enabled: false,
+    status: "Curated events active",
+    lastRequestWeek: null,
+    lastSuccessWeek: null,
+    ...(state.ai || {}),
+  };
+  ensureBalanceState({ migrated: needsBalanceMigration });
+  if (needsBalanceMigration) {
+    state.balance.focusSpent = 0;
+    state.balance.focusWeek = state.week;
+    state.balance.focusMax = calculateWeeklyFocusCapacity();
+    state.balance.lastPressureWeek = state.week;
+    state.balance.graceUntilWeek = Math.max(Number(state.balance.graceUntilWeek) || 0, Number(state.week) + 2);
+    state.balance.criticalWeeks = 0;
+  }
+  state.seenLateGameEvents = Array.isArray(state.seenLateGameEvents) ? state.seenLateGameEvents : [];
+  const restoredMonetization = state.monetization || {};
+  const hadPriceChangeWeek = Object.prototype.hasOwnProperty.call(restoredMonetization, "lastPriceChangeWeek");
+  state.monetization = {
+    ...createInitialMonetizationState(),
+    ...restoredMonetization,
+  };
+  if (!hadPriceChangeWeek) {
+    state.monetization.lastPriceChangeWeek = state.market?.lastChoiceWeek?.pricing === state.week
+      ? state.week
+      : null;
+  }
+  ensureEconomyState();
+  if (!("lastCostCutWeek" in state.economy)) state.economy.lastCostCutWeek = null;
+  state.market.lastChoiceWeek = state.market.lastChoiceWeek || {};
+  state.market.actionLastUsedWeek = state.market.actionLastUsedWeek || {};
+  state.team.lastRoleActionWeek = state.team.lastRoleActionWeek || {};
+  const restoredAggregateUx = Number(state.product?.ux);
+  state.product.products?.forEach((product) => {
+    if (!("lastManagedWeek" in product)) product.lastManagedWeek = null;
+    if (!Number.isFinite(Number(product.ux))) {
+      product.ux = Number.isFinite(restoredAggregateUx)
+        ? clamp(Math.round(restoredAggregateUx), 0, 100)
+        : inferredProductUx(product);
+    }
+    if (!product.active) product.revenue = 0;
+  });
+  if (Array.isArray(state.product?.products) && state.product.products.length && !state.product.products.some((product) => product.active)) {
+    state.product.products[0].active = true;
+  }
+  sanitizeRestoredGameNumbers();
+  if (needsBalanceMigration) {
+    const pressureSnapshot = calculateOperatingPressureSnapshot();
+    state.balance.pressure = pressureSnapshot.pressure;
+    state.balance.overloadRisk = pressureSnapshot.overloadRisk;
+  }
+  state.history = Array.isArray(state.history) ? state.history : [];
+  state.totalDecisionCount = Math.max(Number(state.totalDecisionCount) || 0, state.history.length);
+  if (state.history.length > MAX_HISTORY_ENTRIES) {
+    state.history = state.history.slice(-MAX_HISTORY_ENTRIES);
+  }
+  state.achievements = state.achievements || loadAchievements();
+  state.achievementsThisRun = Array.isArray(state.achievementsThisRun) ? state.achievementsThisRun : [];
+  if (typeof state.immediateAppliedPromptId === "string" && !/^\d+:/u.test(state.immediateAppliedPromptId)) {
+    state.immediateAppliedPromptId = `${Math.max(1, Number(state.week) || 1)}:${state.immediateAppliedPromptId}`;
+  }
+
+  if (needsValuationMigration) {
+    const runAgeRevenueCeiling = Math.round(600 * Math.pow(1.16, Math.min(70, Math.max(0, (Number(state.week) || 1) - 1))));
+    const observedRecurringRevenue = Math.max(0, Number(state.revenue) || 0) * recurringRevenueShare();
+    state.company = {
+      ...state.company,
+      valuation: 0,
+      stageIndex: 0,
+      highestStageIndex: 0,
+      stage: companyStages[0].id,
+      lastPromotion: null,
+      valuationModelVersion: COMPANY_VALUATION_MODEL_VERSION,
+      lastValuationWeek: null,
+      smoothedWeeklyRevenue: Math.min(observedRecurringRevenue, runAgeRevenueCeiling),
+      valuationBreakdown: createInitialValuationBreakdown(),
+      readiness: createInitialReadinessState(1),
+    };
+    updateCompanyProgress({ suppressToast: true, force: true });
+  }
+}
+
+function renderContinueRunPanel() {
+  if (!continueRunPanel) return;
+  const saved = loadFullGameState();
+  continueRunPanel.classList.toggle("is-hidden", !saved);
+  if (!saved) return;
+  const hasCurrentValuationModel = Number(saved.state.company?.valuationModelVersion) === COMPANY_VALUATION_MODEL_VERSION;
+  const savedStageIndex = hasCurrentValuationModel
+    ? clamp(Number(saved.state.company?.highestStageIndex) || 0, 0, companyStages.length - 1)
+    : 0;
+  if (savedRunName) savedRunName.textContent = saved.startup.idea || "Untitled startup";
+  if (savedRunMeta) {
+    const stageLabel = hasCurrentValuationModel ? companyStages[savedStageIndex].label : "Valuation recalibrates on resume";
+    savedRunMeta.textContent = `Week ${saved.state.week || 1} · ${stageLabel} · ${formatMoney(saved.state.cash || 0)} cash`;
+  }
+}
+
+function resumeSavedRun() {
+  const saved = loadFullGameState();
+  if (!saved) {
+    renderContinueRunPanel();
+    return;
+  }
+
+  cancelPendingWeekAdvance();
+  isArchiveOnlyView = false;
+  startup = saved.startup;
+  state = saved.state;
+  activePrompt = saved.activePrompt;
+  turnsUntilEvent = Math.max(1, Number(saved.turnsUntilEvent) || 1);
+  pendingResolution = saved.pendingResolution || null;
+  isAdvancingWeek = false;
+  ensureRestoredStateSchema();
+
+  const fallbackSeed = `${startup.idea}|${startup.audience}|${startup.niche}|${startup.startupType}|${startup.style}|${startup.goal}`;
+  rng = createSeededRandom(saved.rng?.seedText || fallbackSeed, Math.max(0, Number(saved.rng?.calls) || 0));
+
+  activeCenterView = saved.ui?.activeCenterView || "overview";
+  activeTimelineFilter = saved.ui?.activeTimelineFilter || "all";
+  activeAchievementCategory = saved.ui?.activeAchievementCategory || "all";
+  activeAchievementRarity = saved.ui?.activeAchievementRarity || "all";
+  activeAchievementStatus = saved.ui?.activeAchievementStatus || "all";
+
+  const type = startupTypes[startup.startupType] || startupTypes.saas;
+  landingPage.classList.add("is-hidden");
+  endingPage.classList.add("is-hidden");
+  endingPage.classList.remove("ending-failure", "ending-success", "ending-unicorn");
+  simulationPage.classList.remove("is-hidden");
+  companyName.textContent = startup.idea;
+  companyContext.textContent = `${type.label} · ${founderStyles[startup.style]?.label || "Balanced"} founder · ${goals[startup.goal]?.label || "Profit"} goal · ${type.note}`;
+  profileName.textContent = startup.idea;
+  profileType.textContent = type.label;
+  profileStyle.textContent = founderStyles[startup.style]?.label || "Balanced";
+  profileGoal.textContent = goals[startup.goal]?.label || "Profit";
+  recalculateDerivedState();
+  setCenterView(activeCenterView);
+  setTimelineFilter(activeTimelineFilter);
+  setAchievementFilter("category", activeAchievementCategory);
+  setAchievementFilter("rarity", activeAchievementRarity);
+  setAchievementFilter("status", activeAchievementStatus);
+  render();
 }
 
 function loadRunHistory() {
@@ -3105,24 +4266,9 @@ function currentRunSnapshot(status = "active", ending = null) {
     bestWeek: bestHistoryWeek(),
     endingType: ending?.title || null,
     score,
+    companyStage: currentCompanyStage().label,
+    companyValuation: state.company?.valuation || 0,
     achievementsUnlocked: [...(state.achievementsThisRun || [])],
-    activeProductId: state.product?.activeProductId ?? state.activeProductId ?? null,
-    products: (state.product?.products || []).map((product) => ({
-      id: product.id,
-      name: product.name,
-      type: product.type,
-      category: product.category || product.type,
-      pricingModel: product.pricingModel,
-      price: product.price,
-      users: product.users,
-      growth: product.growth,
-      quality: product.quality ?? product.productQuality,
-      productQuality: product.productQuality,
-      technicalDebt: product.technicalDebt,
-      revenue: product.revenue,
-      status: product.status || (product.active ? "active" : "inactive"),
-      active: product.active,
-    })),
     timelineSummary,
   };
 }
@@ -3135,7 +4281,7 @@ function bestHistoryWeek() {
 function persistCurrentRun(status = "active", { includeHistory = false, ending = null } = {}) {
   if (!state.runId) return null;
   const run = currentRunSnapshot(status, ending);
-  writeStorageJson(currentRunStorageKey, run);
+  if (!writeStorageJson(currentRunStorageKey, run)) return null;
   if (includeHistory || run.status !== "active") {
     upsertRunHistory(run);
   }
@@ -3143,10 +4289,14 @@ function persistCurrentRun(status = "active", { includeHistory = false, ending =
 }
 
 function manualSaveRun() {
+  if (isAdvancingWeek || isArchiveOnlyView) return;
   const run = persistCurrentRun("active", { includeHistory: true });
-  if (run) {
+  const fullStateSaved = persistFullGameState();
+  if (run && fullStateSaved) {
     showRunMessage("Run saved");
     renderRunsView();
+  } else {
+    showRunMessage("Save failed — browser storage may be full");
   }
 }
 
@@ -3179,9 +4329,9 @@ function checkAchievements(context = {}) {
     survive_5: state.week >= 5,
     survive_10: state.week >= 10,
     runway_master: state.week >= 6 && calculateRunwayWeeks() >= 16,
-    ship_first_upgrade: (state.product?.products || []).some((product) => product.roadmap?.shipped?.length > 0),
+    ship_first_upgrade: state.product?.roadmap?.shipped?.length > 0,
     product_market_fit: marketFitRank(marketFitStatus()) >= 2,
-    debt_crusher: (state.product?.products || []).some((product) => product.technicalDebt <= 10),
+    debt_crusher: state.product?.technicalDebt <= 10,
     first_hire: getTeamSize() > 1,
     balanced_team: Object.values(state.team?.roles || {}).filter((count) => count > 0).length >= 3,
     high_morale_team: state.team?.morale >= 90 && getTeamSize() >= 3,
@@ -3192,7 +4342,7 @@ function checkAchievements(context = {}) {
     reputation_collapse: context.ending?.title === "Users lost trust" || state.reputation <= 0,
     traction_lost: context.ending?.title === "You lost all traction" || state.users <= 0,
     bootstrapped_hero: state.week >= 20 && state.cash > 0,
-    unicorn_architect: context.ending?.type === "unicorn",
+    unicorn_architect: currentCompanyStageIndex() >= companyStages.length - 1,
     comeback_story: state.hadCriticalRunway && calculateRunwayWeeks() >= 10,
   };
 
@@ -3221,7 +4371,7 @@ function unlockAchievement(id) {
 function showAchievementToast(achievement) {
   achievementToast.className = `achievement-toast rarity-${achievement.rarity.toLowerCase()}`;
   achievementToast.innerHTML = `
-    <span>Achievement Unlocked</span>
+    <span>🏆 Achievement Unlocked</span>
     <strong>${achievement.title}</strong>
     <small>${achievement.rarity}</small>
   `;
@@ -3249,7 +4399,7 @@ function marketFitRank(fit) {
 }
 
 function makeDecision(decision) {
-  if (pendingResolution) return;
+  if (pendingResolution || isAdvancingWeek) return;
   playSound("click");
   const before = captureStats();
   const baseEffects = normalizeEffects(decision.effects);
@@ -3277,24 +4427,42 @@ function makeDecision(decision) {
   const insightEffects = { ...finalEffects };
   routeBurnEffect(finalEffects, `${activePrompt.title} ${decision.label}`);
 
+  const configuredRevenue = finalEffects.revenue;
   const weeklyRevenue = calculateWeeklyRevenue(finalEffects);
-  finalEffects.revenue += weeklyRevenue;
-  finalEffects.cash += weeklyRevenue - weeklyOperatingCost();
+  if (activeProducts().length) {
+    allocateRevenueEffectToProducts(configuredRevenue);
+    syncAggregateProductStats();
+  }
+  finalEffects.revenue = configuredRevenue + weeklyRevenue;
+  finalEffects.cash -= weeklyOperatingCost();
 
-  applyEffects(finalEffects);
+  applyEffects(finalEffects, {
+    portfolioUsersAlreadyApplied: true,
+    revenueAlreadyAllocated: activeProducts().length > 0,
+    replaceRevenue: true,
+  });
   const completedUpgrades = progressProductDevelopment();
+  recalculateDerivedState();
   state.peakUsers = Math.max(state.peakUsers, state.users);
 
+  const pressureDelta = diffStats(before, captureStats());
+  updateProductPressure(pressureDelta);
+  updateMarketPressure(pressureDelta);
+  recalculateDerivedState();
+
+  const moraleDelta = diffStats(before, captureStats());
+  const preliminaryOutcome = classifyOutcome(moraleDelta);
+  updateStreak(preliminaryOutcome);
+  updateTeamMorale(moraleDelta, preliminaryOutcome);
+  recalculateDerivedState();
+
+  // The visible decision delta is captured only after product aggregation and
+  // all cross-system updates have settled.
   const after = captureStats();
   const delta = diffStats(before, after);
   const outcome = classifyOutcome(delta);
-  updateStreak(outcome);
-  updateTeamMorale(delta, outcome);
-  updateProductPressure(delta);
-  updateMarketPressure(delta);
-  recalculateDerivedState();
   state.lastDelta = delta;
-  state.history.push({
+  const historyEntry = appendHistoryEntry({
     week: state.week,
     title: activePrompt.title,
     decision: decision.label,
@@ -3302,7 +4470,7 @@ function makeDecision(decision) {
     delta,
     outcome,
   });
-  state.lastInsight = state.history[state.history.length - 1].insight;
+  state.lastInsight = historyEntry.insight;
   if (completedUpgrades.length) {
     state.lastInsight += ` Shipped this week: ${completedUpgrades.map((item) => item.label).join(", ")}.`;
   }
@@ -3327,19 +4495,54 @@ function weeklyOperatingCost() {
   return state.burnRate;
 }
 
-function continueToNextWeek() {
-  if (!pendingResolution) return;
+function cancelPendingWeekAdvance() {
+  weekAdvanceGeneration += 1;
+  activeAIRequestController?.abort();
+  activeAIRequestController = null;
+  isAdvancingWeek = false;
+}
+
+async function continueToNextWeek() {
+  if (!pendingResolution || isAdvancingWeek) return;
   const ending = pendingResolution.ending;
-  pendingResolution = null;
   if (ending) {
+    pendingResolution = null;
     checkAchievements({ ending });
     showEnding(ending);
     return;
   }
-  state.week += 1;
-  decayBurnSourcesForNewWeek();
-  activePrompt = nextPrompt();
-  render();
+
+  const advancingRunId = state.runId;
+  const advanceGeneration = ++weekAdvanceGeneration;
+  isAdvancingWeek = true;
+  if (continueWeekButton) {
+    continueWeekButton.disabled = true;
+    continueWeekButton.textContent = "Preparing the next week…";
+  }
+  updateSystemActionLock();
+
+  try {
+    state.week += 1;
+    resetFocusForNewWeek();
+    decayBurnSourcesForNewWeek();
+    decayPausedProductsForNewWeek();
+    applyWeeklyOperatingPressure();
+    const preparedPrompt = await nextPrompt();
+    if (advanceGeneration !== weekAdvanceGeneration || state.runId !== advancingRunId) return;
+    activePrompt = preparedPrompt;
+    pendingResolution = null;
+    recalculateDerivedState();
+  } catch (error) {
+    if (advanceGeneration !== weekAdvanceGeneration || state.runId !== advancingRunId) return;
+    ensureAIState().status = "Adaptive event unavailable — curated events active";
+    activePrompt = chooseCuratedPrompt(activePrompt?.title || "");
+    pendingResolution = null;
+  } finally {
+    if (advanceGeneration === weekAdvanceGeneration && state.runId === advancingRunId) {
+      isAdvancingWeek = false;
+      render();
+    }
+  }
 }
 
 function applyFounderStyle(effects) {
@@ -3371,8 +4574,6 @@ function applyStartupType(effects) {
   adjusted.users = Math.round(adjusted.users * usersMultiplier);
   adjusted.revenue = Math.round(adjusted.revenue * type.revenueMultiplier);
   adjusted.burnRate = Math.round(adjusted.burnRate * type.burnMultiplier);
-  adjusted.productQuality += type.qualityDrift;
-  adjusted.reputation += type.reputationDrift;
 
   if (startup.startupType === "agency" && adjusted.users > 14) {
     adjusted.users = 14 + Math.round((adjusted.users - 14) * 0.35);
@@ -3392,10 +4593,6 @@ function applyStartupType(effects) {
   if (startup.startupType === "marketplace" && state.users < 80) {
     adjusted.revenue -= 90;
     adjusted.growthRate -= 2;
-  }
-
-  if (startup.startupType === "saas" && adjusted.productQuality > 0) {
-    adjusted.revenue += 140;
   }
 
   return adjusted;
@@ -3434,11 +4631,6 @@ function applySystemFeedback(effects, decisionLabel) {
     adjusted.reputation -= state.week <= 10 ? 0 : 1;
   }
 
-  if (state.productQuality > 72 && adjusted.reputation > 0) {
-    adjusted.users += 5;
-    adjusted.revenue += 90;
-  }
-
   return adjusted;
 }
 
@@ -3452,7 +4644,7 @@ function applyDifficultyCurve(effects) {
   const competitionDrag = state.market?.competitorPressure > 70 ? 4 : state.market?.competitorPressure > 55 ? 2 : 0;
 
   if (effects.users > 0) {
-    const earlyCap = week <= 10 ? 18 : week <= 25 ? Math.max(30, Math.round(state.users * 0.18)) : week <= 40 ? Math.max(42, Math.round(state.users * 0.22)) : Math.max(55, Math.round(state.users * 0.25));
+    const earlyCap = week <= 10 ? Math.max(6, Math.round(state.users * 0.08)) : week <= 25 ? Math.max(14, Math.round(state.users * 0.1)) : Math.max(28, Math.round(state.users * 0.12));
     effects.users = Math.min(Math.round(effects.users * growthScale), earlyCap);
   }
   if (effects.revenue > 0) {
@@ -3522,30 +4714,32 @@ function simulateProductPortfolio(effects) {
   if (!products.length) return 0;
 
   const fitRank = marketFitRank(marketFitStatus());
-  const marketPull = 0.72 + state.market.demand / 120 + fitRank * 0.08;
-  const teamGrowth = state.team.roles.marketer * 0.04 + state.team.roles.sales * 0.015;
-  const workloadPenalty = Math.max(0, products.length - Math.max(1, state.team.roles.engineer + state.team.roles.operations)) * 0.1;
+  const marketPull = 0.52 + state.market.demand / 240 + fitRank * 0.06;
+  const teamGrowth = Math.sqrt(state.team.roles.marketer || 0) * 0.018 + Math.sqrt(state.team.roles.sales || 0) * 0.006;
+  const staffedCapacity = state.team.roles.engineer + state.team.roles.operations * 1.5;
+  const workloadPenalty = Math.max(0, products.length - staffedCapacity) * 0.08;
+  const competitionDrag = (Number(state.market.competitorPressure) || 0) / 5000;
   let totalRevenue = 0;
   let totalUserDelta = 0;
   let totalReputationDelta = 0;
 
   products.forEach((product) => {
-    const modelKey = product.pricingModel || "freemium";
+    const modelKey = state.monetization?.pricingModel || product.pricingModel;
     const model = pricingModels[modelKey] || pricingModels.freemium;
-    const price = product.price ?? model.basePrice;
+    const price = state.monetization?.price ?? product.price;
     const pressure = productPricePressure(product);
     const qualityScore = (product.productQuality + product.stability + state.reputation) / 3;
     const priceFriction = Math.max(0, pressure.ratio - 1) * 0.18;
-    const growthBase = (state.growthRate / 100 + effects.growthRate / 180 + teamGrowth + (qualityScore - 55) / 260) * model.growth * marketPull * pressure.growthMultiplier;
+    const growthBase = (state.growthRate / 100 + effects.growthRate / 200 + teamGrowth + (qualityScore - 58) / 700) * model.growth * marketPull * pressure.growthMultiplier - competitionDrag;
     const churn = Math.max(0.01, calculateProductChurn(product) + workloadPenalty + priceFriction);
     const rawUserDelta = Math.round(product.users * (growthBase - churn) + effects.users / products.length);
     const stageCap = state.week <= 10
-      ? Math.max(6, Math.round(product.users * 0.1))
+      ? Math.max(4, Math.round(product.users * 0.08))
       : state.week <= 25
-        ? Math.max(16, Math.round(product.users * 0.15))
-        : Math.max(34, Math.round(product.users * 0.2));
-    const userDelta = clamp(rawUserDelta, -Math.max(5, Math.round(product.users * 0.18)), stageCap);
-    product.users = Math.max(0, product.users + userDelta);
+        ? Math.max(10, Math.round(product.users * 0.1))
+        : Math.max(24, Math.round(product.users * 0.12));
+    const userDelta = clamp(rawUserDelta, -Math.max(5, Math.round(product.users * 0.24)), stageCap);
+    product.users = clamp(Math.max(0, product.users + userDelta), 0, MAX_SAFE_GAME_VALUE);
     product.growth = userDelta;
 
     const conversion = productConversionRate(product, model, fitRank);
@@ -3555,7 +4749,7 @@ function simulateProductPortfolio(effects) {
         ? Math.max(0, Math.floor(product.users * 0.12))
         : product.users;
     const revenue = modelKey === "free" ? 0 : Math.round(revenueBaseUsers * conversion * price * model.revenue);
-    product.revenue = Math.max(0, revenue);
+    product.revenue = Math.round(finiteGameNumber(revenue, 0, 0, MAX_SAFE_GAME_VALUE));
     totalRevenue += product.revenue;
     totalUserDelta += userDelta;
 
@@ -3569,11 +4763,11 @@ function simulateProductPortfolio(effects) {
     if (product.productQuality >= 72 && product.stability >= 66 && product.users > 25) {
       totalReputationDelta += 1;
     }
-    product.quality = product.productQuality;
-    product.status = product.active ? "active" : "inactive";
   });
 
-  effects.users += totalUserDelta;
+  // Product entities already received the complete weekly user change. Clear the
+  // aggregate effect so applyEffects cannot add the same users a second time.
+  effects.users = 0;
   effects.reputation += clamp(totalReputationDelta, -4, 4);
   if (products.length > state.team.roles.engineer + state.team.roles.operations + 1) {
     effects.productQuality -= 1;
@@ -3584,34 +4778,40 @@ function simulateProductPortfolio(effects) {
 }
 
 function productConversionRate(product, model, fitRank) {
-  const modelKey = product.pricingModel || "freemium";
+  const modelKey = state.monetization?.pricingModel || product.pricingModel;
   const activeModel = pricingModels[modelKey] || model;
-  const price = product.price ?? activeModel.basePrice;
+  const price = state.monetization?.price ?? product.price;
   if (price <= 0 || activeModel.conversion === 0) return 0;
   const pressure = productPricePressure(product);
-  const qualityLift = (product.productQuality - 50) / 260;
-  const reputationLift = (state.reputation - 55) / 320;
+  const qualityLift = (product.productQuality - 50) / 420;
+  const reputationLift = (state.reputation - 55) / 520;
   const fitLift = fitRank * 0.018;
+  const salesLift = Math.sqrt(state.team?.roles?.sales || 0) * 0.008;
   const pricePenalty = activeModel.basePrice > 0 ? Math.max(0, (price - activeModel.basePrice) / (activeModel.basePrice * 10)) : 0;
-  const base = clamp(activeModel.conversion + qualityLift + reputationLift + fitLift - pricePenalty, 0.001, 0.42);
-  return clamp(base * pressure.conversionMultiplier, 0.0001, 0.42);
+  const conversionCap = { free: 0, freemium: 0.16, subscription: 0.28, oneTime: 0.2, enterprise: 0.1 }[modelKey] ?? 0.16;
+  const base = clamp(activeModel.conversion + qualityLift + reputationLift + fitLift + salesLift - pricePenalty, 0.001, conversionCap);
+  return clamp(base * pressure.conversionMultiplier, 0.0001, conversionCap);
 }
 
 function calculateProductChurn(product) {
-  const model = pricingModels[product.pricingModel || "freemium"] || pricingModels.freemium;
+  const model = pricingModels[state.monetization?.pricingModel || product.pricingModel] || pricingModels.freemium;
   const pressure = productPricePressure(product);
-  const qualityRisk = (100 - product.productQuality) / 620;
-  const stabilityRisk = (100 - product.stability) / 520;
-  const debtRisk = product.technicalDebt / 920;
-  const expectationRisk = (model.expectation - 1) * 0.04;
-  return qualityRisk + stabilityRisk + debtRisk + expectationRisk + pressure.churnPenalty;
+  const qualityRisk = (100 - product.productQuality) / 4000;
+  const stabilityRisk = (100 - product.stability) / 3500;
+  const debtRisk = product.technicalDebt / 5000;
+  const trustRisk = (100 - state.reputation) / 5000;
+  const competitionRisk = (Number(state.market?.competitorPressure) || 0) / 5000;
+  const stageRisk = currentCompanyStageIndex() * 0.002;
+  const overloadRisk = (Number(state.balance?.overloadRisk) || 0) / 100 * 0.06;
+  const expectationRisk = Math.max(0, model.expectation - 1) * 0.03;
+  return clamp(0.008 + qualityRisk + stabilityRisk + debtRisk + trustRisk + competitionRisk + stageRisk + overloadRisk + expectationRisk + pressure.churnPenalty, 0.01, 0.24);
 }
 
 function productPricePressure(product) {
   const segmentKey = segmentKeyForProduct(product);
   const tolerance = segmentPriceTolerance[segmentKey] || 55;
-  const modelKey = product.pricingModel || "freemium";
-  const price = product.price ?? pricingModels[modelKey]?.basePrice ?? 0;
+  const modelKey = state.monetization?.pricingModel || product.pricingModel;
+  const price = state.monetization?.price ?? product.price;
   const model = pricingModels[modelKey] || pricingModels.freemium;
   if (modelKey === "free" || price <= 0) {
     return { ratio: 0, conversionMultiplier: 1, growthMultiplier: 1.12, churnPenalty: 0, warning: "Fair Price" };
@@ -3658,18 +4858,37 @@ function segmentKeyForProduct(product) {
   return state.market?.segment || "founders";
 }
 
-function applyEffects(effects) {
+function applyEffects(effects, context = {}) {
   routeBurnEffect(effects);
-  if (!activeProducts().length) {
-    state.users = Math.max(0, Math.round(state.users + effects.users));
+  const qualityDelta = effects.productQuality > 0
+    ? Math.max(1, Math.round(effects.productQuality * clamp((110 - state.productQuality) / 70, 0.2, 1)))
+    : effects.productQuality;
+  const reputationDelta = effects.reputation > 0
+    ? Math.max(1, Math.round(effects.reputation * clamp((110 - state.reputation) / 70, 0.2, 1)))
+    : effects.reputation;
+  const products = activeProducts();
+  if (products.length) {
+    if (!context.portfolioUsersAlreadyApplied) {
+      distributeUserEffectToProducts(effects.users);
+    }
+    applyQualityEffectToProducts(qualityDelta);
+    if (!context.revenueAlreadyAllocated) {
+      allocateRevenueEffectToProducts(effects.revenue);
+    }
+    syncAggregateProductStats();
+  } else {
+    state.users = Math.round(finiteGameNumber(state.users + effects.users, 0, 0, MAX_SAFE_GAME_VALUE));
+    state.revenue = Math.round(finiteGameNumber(context.replaceRevenue ? effects.revenue : state.revenue + effects.revenue, 0, 0, MAX_SAFE_GAME_VALUE));
+    state.productQuality = clamp(Math.round(state.productQuality + qualityDelta), 0, 100);
   }
-  state.revenue = activeProducts().length ? Math.max(0, Math.round(effects.revenue || state.revenue)) : Math.max(0, Math.round(state.revenue + effects.revenue));
-  state.totalRevenue = Math.max(0, Math.round(state.totalRevenue + Math.max(0, effects.revenue)));
-  state.cash = Math.round(state.cash + effects.cash);
+  const transactionCogs = context.replaceRevenue
+    ? 0
+    : Math.round(Math.max(0, effects.revenue) * (startupCogsRates[startup.startupType] ?? 0.15));
+  state.totalRevenue = clamp(Math.max(0, Math.round(state.totalRevenue + Math.max(0, effects.revenue))), 0, MAX_SAFE_GAME_VALUE);
+  state.cash = clamp(Math.round(state.cash + effects.cash + effects.revenue - transactionCogs), -MAX_SAFE_GAME_VALUE, MAX_SAFE_GAME_VALUE);
   state.burnRate = calculateCurrentBurnRate();
-  state.reputation = clamp(Math.round(state.reputation + effects.reputation), 0, 100);
-  state.productQuality = clamp(Math.round(state.productQuality + effects.productQuality), 0, 100);
-  state.growthRate = clamp(Math.round(state.growthRate + effects.growthRate), -35, 80);
+  state.reputation = clamp(Math.round(state.reputation + reputationDelta), 0, 100);
+  state.growthRate = clamp(Math.round(state.growthRate + effects.growthRate), -35, MAX_GROWTH_RATE);
 }
 
 function evaluateEnding() {
@@ -3682,28 +4901,17 @@ function evaluateEnding() {
   if (state.reputation <= 0) {
     return { type: "failure", title: "Users lost trust", reason: "Reputation collapsed, making acquisition and retention impossible." };
   }
-
-  const fitRank = marketFitRank(marketFitStatus());
-  const runwayWeeks = calculateRunwayWeeks();
-  const balancedWin = state.productQuality >= 65 && state.reputation >= 60 && fitRank >= 2 && runwayWeeks >= 5;
-
-  if (state.week >= MIN_SUCCESS_WEEK && state.users >= 25000 && state.revenue >= 180000 && state.growthRate >= 24 && balancedWin) {
-    return { type: "unicorn", title: "Unicorn", reason: "You hit breakout scale before the clock ran out." };
+  const currentCriticalConditions = criticalConditionCount();
+  if (currentCriticalConditions < 2 && (Number(state.balance?.criticalWeeks) || 0) > 0) {
+    state.balance.criticalWeeks = 0;
   }
-
-  if (state.week >= MAX_WEEKS) {
-    if (state.users >= 10000 && state.revenue >= 90000 && state.growthRate >= 18 && balancedWin) {
-      return { type: "success", title: "High Growth Startup", reason: "You built a fast-growing company with serious market pull and enough operating discipline to keep going." };
-    }
-    if (state.revenue >= state.burnRate * 6 && state.cash > 0 && state.productQuality >= 60 && state.reputation >= 55 && fitRank >= 1) {
-      return { type: "success", title: "Profitable Business", reason: "You created a steady business that can support its costs without losing trust or product quality." };
-    }
-    if (state.users >= 6500 && state.growthRate >= 14 && state.revenue >= 40000 && balancedWin) {
-      return { type: "success", title: "High Growth Startup", reason: "You survived with strong audience momentum and a balanced foundation." };
-    }
-    return { type: "success", title: "Small Profitable Business", reason: "You survived the startup gauntlet, but the company still needs better balance before it can claim a stronger ending." };
+  if ((Number(state.balance?.criticalWeeks) || 0) >= 3 && currentCriticalConditions >= 2) {
+    return {
+      type: "failure",
+      title: "The company collapsed under pressure",
+      reason: "Multiple critical risks stayed unresolved for three weeks. Runway, product health, trust, or morale could no longer support operations.",
+    };
   }
-
   return null;
 }
 
@@ -3711,6 +4919,7 @@ function showEnding(ending) {
   const score = calculateGoalScore();
   const previousBest = bestRunBy(loadRunHistory().filter((run) => run.id !== state.runId), (run) => run.score || 0);
   persistCurrentRun(ending.type === "failure" ? "failed" : "completed", { includeHistory: true, ending });
+  clearFullGameState();
   simulationPage.classList.add("is-hidden");
   endingPage.classList.remove("is-hidden");
   endingPage.classList.toggle("ending-failure", ending.type === "failure");
@@ -3733,7 +4942,7 @@ function showEnding(ending) {
 }
 
 function calculateGoalScore() {
-  const survival = clamp((state.week / MAX_WEEKS) * 220, 0, 220);
+  const survival = clamp((Math.log2(Math.max(1, state.week) + 1) / Math.log2(SCORE_SURVIVAL_HORIZON + 1)) * 220, 0, 220);
   const userScore = clamp(Math.sqrt(state.peakUsers) * 16, 0, 230);
   const revenueScore = clamp(Math.sqrt(state.totalRevenue) * 3.1, 0, 230);
   const growthScore = clamp((state.growthRate + 35) * 3.2, 0, 210);
@@ -3751,16 +4960,16 @@ function calculateGoalScore() {
 
 function endingTitleFor(ending) {
   if (ending.type === "failure") {
-    return "Your Startup Failed";
+    return "💀 Your Startup Failed";
   }
   if (ending.type === "unicorn") {
-    return "Unicorn";
+    return "🦄 Unicorn";
   }
   if (ending.title.includes("High Growth")) {
-    return "High Growth Startup";
+    return "🚀 High Growth Startup";
   }
   if (ending.title.includes("Profitable")) {
-    return "Profitable Business";
+    return "💰 Profitable Business";
   }
   return ending.title;
 }
@@ -3780,7 +4989,7 @@ function renderKeyDecisions() {
 
   keyEntries.forEach((entry) => {
     const item = document.createElement("li");
-    item.innerHTML = `<strong>Week ${entry.week}: ${entry.decision}</strong><span>${formatPlainDelta(entry.delta)}</span>`;
+    item.innerHTML = `<strong>Week ${entry.week}: ${escapeHTML(entry.decision)}</strong><span>${escapeHTML(formatPlainDelta(entry.delta))}</span>`;
     keyDecisionsList.append(item);
   });
 }
@@ -3811,35 +5020,264 @@ function decisionImpactScore(delta) {
   return Math.abs(delta.users || 0) + Math.abs(delta.revenue || 0) / 40 + Math.abs(delta.cash || 0) / 60 + Math.abs(delta.reputation || 0) * 5 + Math.abs(delta.growthRate || 0) * 4;
 }
 
-function nextPrompt() {
+async function nextPrompt() {
+  state.currentEventImpact = "";
   turnsUntilEvent -= 1;
   if (turnsUntilEvent <= 0) {
     turnsUntilEvent = state.week <= 10 ? randomBetween(2, 3) : state.week >= 18 ? randomBetween(1, 2) : randomBetween(1, 3);
+
+    const adaptivePrompt = await requestAdaptiveAIEvent();
+    if (adaptivePrompt) return adaptivePrompt;
+
+    if ((Number(state.balance?.pressure) || 0) >= 55 && shouldTriggerSetback()) {
+      return choosePrompt(randomEvents.filter((event) => event.title.includes("churn") || event.title.includes("slow growth") || event.title.includes("Support load") || event.title.includes("bug") || event.title.includes("crash")), activePrompt.title);
+    }
+
     const stateDrivenPrompt = chooseStateDrivenEvent(activePrompt.title);
     if (stateDrivenPrompt) {
       return stateDrivenPrompt;
     }
+
     if (shouldTriggerSetback()) {
       return choosePrompt(randomEvents.filter((event) => event.title.includes("churn") || event.title.includes("slow growth") || event.title.includes("Support load") || event.title.includes("bug") || event.title.includes("crash")), activePrompt.title);
     }
+    const stagePrompt = chooseLateGameEvent(activePrompt.title);
+    if (stagePrompt) return stagePrompt;
     if (state.market && (state.market.competitorPressure >= 58 || rng() < (state.week >= 16 ? 0.42 : 0.3))) {
       return choosePrompt(marketEvents, activePrompt.title);
     }
     return choosePrompt(randomEvents, activePrompt.title);
   }
-  state.currentEventImpact = "";
   return choosePrompt(scenarios, activePrompt.title);
+}
+
+function chooseCuratedPrompt(avoidTitle = "") {
+  return chooseLateGameEvent(avoidTitle, true)
+    || chooseStateDrivenEvent(avoidTitle)
+    || choosePrompt([...randomEvents, ...marketEvents], avoidTitle);
+}
+
+function chooseLateGameEvent(avoidTitle = "", force = false) {
+  const stageIndex = currentCompanyStageIndex();
+  if (stageIndex < 1) return null;
+  state.seenLateGameEvents = Array.isArray(state.seenLateGameEvents) ? state.seenLateGameEvents : [];
+  const eligible = lateGameEvents.filter((event) => event.minStageIndex <= stageIndex && event.title !== avoidTitle && !state.seenLateGameEvents.includes(event.title));
+  if (!eligible.length || (!force && rng() > Math.min(0.72, 0.3 + stageIndex * 0.07))) return null;
+  const closestStage = Math.max(...eligible.map((event) => event.minStageIndex));
+  const stagePool = eligible.filter((event) => event.minStageIndex >= Math.max(1, closestStage - 1));
+  const event = choosePrompt(stagePool.length ? stagePool : eligible, avoidTitle);
+  if (event) state.seenLateGameEvents.push(event.title);
+  return event;
+}
+
+function ensureAIState() {
+  if (!state.ai) {
+    state.ai = {
+      enabled: false,
+      status: "Curated events active",
+      lastRequestWeek: null,
+      lastSuccessWeek: null,
+    };
+  }
+  return state.ai;
+}
+
+function canRequestAdaptiveAIEvent() {
+  const ai = ensureAIState();
+  if (!ai.enabled || state.week <= 4) return false;
+  const lastWeek = Number.isFinite(ai.lastRequestWeek) ? ai.lastRequestWeek : -Infinity;
+  return state.week - lastWeek >= AI_EVENT_COOLDOWN_WEEKS;
+}
+
+function buildAIEventContext() {
+  return {
+    startup: {
+      idea: String(startup.idea || "").slice(0, 120),
+      audience: String(startup.audience || "").slice(0, 120),
+      niche: String(startup.niche || "").slice(0, 120),
+      type: startup.startupType,
+      founderStyle: startup.style,
+      goal: startup.goal,
+    },
+    week: state.week,
+    company: {
+      stage: currentCompanyStage().label,
+      valuation: state.company?.valuation || 0,
+      readiness: state.company?.readiness,
+      operatingPressure: state.balance?.pressure || 0,
+      focusRemaining: focusRemaining(),
+    },
+    stats: {
+      users: state.users,
+      weeklyRevenue: state.revenue,
+      cash: state.cash,
+      weeklyBurn: state.burnRate,
+      runwayWeeks: calculateRunwayWeeks(),
+      reputation: state.reputation,
+      productQuality: state.productQuality,
+      growthRate: state.growthRate,
+    },
+    team: {
+      size: getTeamSize(),
+      morale: state.team?.morale,
+      roles: state.team?.roles,
+    },
+    product: {
+      activeProducts: activeProducts().length,
+      stability: state.product?.stability,
+      technicalDebt: state.product?.technicalDebt,
+      marketFit: marketFitStatus(),
+    },
+    market: {
+      segment: state.market?.segment,
+      positioning: state.market?.positioning,
+      demand: state.market?.demand,
+      competition: state.market?.competition,
+      competitorPressure: state.market?.competitorPressure,
+    },
+    recentDecisions: (state.history || []).slice(-4).map((entry) => ({
+      week: entry.week,
+      title: String(entry.title || "").slice(0, 100),
+      decision: String(entry.decision || "").slice(0, 100),
+      outcome: entry.outcome,
+    })),
+  };
+}
+
+async function requestAdaptiveAIEvent() {
+  if (!canRequestAdaptiveAIEvent()) return null;
+  const ai = ensureAIState();
+  ai.lastRequestWeek = state.week;
+  ai.status = "Groq is adapting the next event…";
+  renderAIState();
+
+  const requestRunId = state.runId;
+  const controller = new AbortController();
+  activeAIRequestController = controller;
+  const timeout = window.setTimeout(() => controller.abort(), AI_EVENT_TIMEOUT_MS);
+  try {
+    const response = await fetch("/api/ai-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(buildAIEventContext()),
+      signal: controller.signal,
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      ai.status = payload.code === "AI_NOT_CONFIGURED"
+        ? "Groq is not configured — curated events active"
+        : "Groq unavailable — curated events active";
+      return null;
+    }
+    const event = validateAdaptiveEvent(payload.event);
+    if (!event) {
+      ai.status = "Groq returned an invalid event — curated fallback used";
+      return null;
+    }
+    ai.lastSuccessWeek = state.week;
+    ai.status = `Adaptive event ready for Week ${state.week}`;
+    return event;
+  } catch (error) {
+    ai.status = error?.name === "AbortError"
+      ? "Groq timed out — curated fallback used"
+      : "Groq unavailable — curated events active";
+    return null;
+  } finally {
+    window.clearTimeout(timeout);
+    if (activeAIRequestController === controller) activeAIRequestController = null;
+    if (state.runId === requestRunId) renderAIState();
+  }
+}
+
+function cleanAIText(value, maxLength) {
+  if (typeof value !== "string") return "";
+  return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength);
+}
+
+function clampAIEffects(rawEffects) {
+  if (!rawEffects || typeof rawEffects !== "object" || Array.isArray(rawEffects)) return null;
+  const limits = {
+    users: Math.max(80, Math.round(Math.max(1, state.users) * 0.18)),
+    revenue: Math.max(2500, Math.round(Math.max(1, state.revenue) * 1.5)),
+    cash: Math.max(5000, Math.round(Math.max(1, state.company?.valuation || 0) * 0.025)),
+    burnRate: Math.max(500, Math.round(Math.max(1, state.burnRate) * 0.6)),
+    reputation: 14,
+    productQuality: 12,
+    growthRate: 12,
+  };
+  const effects = normalizeEffects();
+  let hasEffect = false;
+  Object.keys(effects).forEach((key) => {
+    const value = Number(rawEffects[key]);
+    if (!Number.isFinite(value)) return;
+    effects[key] = Math.round(clamp(value, -limits[key], limits[key]));
+    hasEffect ||= effects[key] !== 0;
+  });
+  return hasEffect ? effects : null;
+}
+
+function validateAdaptiveEvent(candidate) {
+  if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) return null;
+  const title = cleanAIText(candidate.title, 110);
+  const eventText = cleanAIText(candidate.text, 320);
+  const eventInsight = cleanAIText(candidate.insight, 260);
+  if (candidate.type !== "event" || title.length < 5 || eventText.length < 12 || eventInsight.length < 8 || !Array.isArray(candidate.decisions) || candidate.decisions.length !== 3) return null;
+
+  const labels = new Set();
+  const decisions = candidate.decisions.map((decision) => {
+    if (!decision || typeof decision !== "object") return null;
+    const label = cleanAIText(decision.label, 80);
+    const hint = cleanAIText(decision.hint, 150);
+    const insight = cleanAIText(decision.insight || eventInsight, 260);
+    const effects = clampAIEffects(decision.effects);
+    const key = label.toLowerCase();
+    if (label.length < 3 || hint.length < 8 || insight.length < 12 || !effects || labels.has(key)) return null;
+    labels.add(key);
+    return { label, hint, insight, effects };
+  });
+  if (decisions.some((decision) => !decision)) return null;
+
+  const immediate = candidate.immediate ? clampAIEffects(candidate.immediate) : null;
+  return {
+    type: "event",
+    source: "ai",
+    title,
+    text: eventText,
+    ...(immediate ? { immediate } : {}),
+    decisions,
+  };
+}
+
+function toggleAIEvents() {
+  if (!state.runId || isAdvancingWeek || isArchiveOnlyView) return;
+  const ai = ensureAIState();
+  ai.enabled = !ai.enabled;
+  ai.status = ai.enabled
+    ? "Adaptive events enabled; curated events remain the fallback"
+    : "Curated events active";
+  renderAIState();
+  persistFullGameState();
+}
+
+function renderAIState() {
+  if (!state.runId) return;
+  const ai = ensureAIState();
+  if (aiEventsButton) {
+    aiEventsButton.textContent = ai.enabled ? "Adaptive AI: On" : "Adaptive AI: Off";
+    aiEventsButton.setAttribute("aria-pressed", String(ai.enabled));
+    aiEventsButton.disabled = isAdvancingWeek || isArchiveOnlyView;
+  }
+  if (aiStatusText) aiStatusText.textContent = ai.status;
 }
 
 function chooseStateDrivenEvent(avoidTitle = "") {
   const candidates = [];
   const products = activeProducts();
   const weakestProduct = products.sort((a, b) => (a.stability + a.productQuality - a.technicalDebt) - (b.stability + b.productQuality - b.technicalDebt))[0];
-  const priceyWeakProduct = products.find((product) => {
-    const modelKey = product.pricingModel || "freemium";
-    const basePrice = pricingModels[modelKey]?.basePrice || 0;
-    return (product.price ?? 0) > basePrice * 1.35 && product.productQuality < 60;
-  });
+  const modelKey = state.monetization?.pricingModel || "freemium";
+  const globalBasePrice = pricingModels[modelKey]?.basePrice || 0;
+  const globalPrice = state.monetization?.price ?? 0;
+  const priceyWeakProduct = products.find((product) => globalPrice > globalBasePrice * 1.35 && product.productQuality < 60);
 
   const recoveryCandidate =
     calculateRunwayWeeks() <= 5 ? "Runway triage meeting."
@@ -3894,8 +5332,9 @@ function shouldTriggerSetback() {
     (state.productQuality < 55 ? (state.week <= 10 ? 0.08 : 0.16) : 0) +
     (state.reputation < 55 ? (state.week <= 10 ? 0.07 : 0.14) : 0) +
     (state.market?.competitorPressure > 60 ? 0.14 : 0) +
+    (Number(state.balance?.pressure) >= 80 ? 0.3 : Number(state.balance?.pressure) >= 60 ? 0.18 : Number(state.balance?.pressure) >= 40 ? 0.08 : 0) +
     (state.week >= 26 ? 0.2 : state.week >= 11 ? 0.1 : 0);
-  return rng() < Math.min(0.58, pressure);
+  return rng() < Math.min(0.72, pressure);
 }
 
 function choosePrompt(pool, avoidTitle = "") {
@@ -3966,8 +5405,8 @@ function renderHistory() {
       <div class="week-chip">Week ${state.week}</div>
       <div>
         <mark>${promptBadge(activePrompt)}</mark>
-        <strong>${activePrompt.title}</strong>
-        <span>${activePrompt.text}</span>
+        <strong>${escapeHTML(activePrompt.title)}</strong>
+        <span>${escapeHTML(activePrompt.text)}</span>
       </div>
     `;
     historyList.append(emptyItem);
@@ -3981,10 +5420,10 @@ function renderHistory() {
       <div class="week-chip">Week ${entry.week}</div>
       <div>
         <mark>${entry.outcome === "bad" ? "Damage Report" : entry.outcome === "good" ? "Momentum Log" : "Founder Note"}</mark>
-        <strong>${entry.title}</strong>
-        <span>You chose: ${entry.decision}</span>
+        <strong>${escapeHTML(entry.title)}</strong>
+        <span>You chose: ${escapeHTML(entry.decision)}</span>
         <small>${formatDelta(entry.delta)}</small>
-        <p>${entry.insight}</p>
+        <p>${escapeHTML(entry.insight)}</p>
       </div>
     `;
     historyList.append(item);
@@ -3996,8 +5435,8 @@ function renderHistory() {
     <div class="week-chip">Week ${state.week}</div>
     <div>
       <mark>${promptBadge(activePrompt)}</mark>
-      <strong>${activePrompt.title}</strong>
-      <span>${activePrompt.text}</span>
+      <strong>${escapeHTML(activePrompt.title)}</strong>
+      <span>${escapeHTML(activePrompt.text)}</span>
     </div>
   `;
   historyList.append(currentItem);
@@ -4022,7 +5461,7 @@ function renderTimelineView() {
   }));
   const visibleEntries = entries.filter((entry) => matchesTimelineFilter(entry, activeTimelineFilter));
 
-  summarySurvived.textContent = state.history.length;
+  summarySurvived.textContent = state.week;
   const bestEntry = [...entries].sort((a, b) => b.impact - a.impact)[0];
   const worstEntry = [...entries].sort((a, b) => a.impact - b.impact)[0];
   const growthEntry = [...entries].sort((a, b) => b.delta.users - a.delta.users)[0];
@@ -4059,11 +5498,11 @@ function renderTimelineView() {
           <span>Week ${entry.week}</span>
           <mark>${entry.eventType.label}</mark>
         </div>
-        <h3>${entry.title}</h3>
-        <p class="decision-line">Decision: ${entry.decision}</p>
+        <h3>${escapeHTML(entry.title)}</h3>
+        <p class="decision-line">Decision: ${escapeHTML(entry.decision)}</p>
         <p class="outcome-line">${timelineOutcomeSummary(entry)}</p>
         <small>${formatDelta(entry.delta)}</small>
-        <p>${entry.insight}</p>
+        <p>${escapeHTML(entry.insight)}</p>
       </article>
     `;
     timelineDetailList.append(item);
@@ -4165,6 +5604,7 @@ function setCenterView(view) {
   if (view === "achievements") {
     renderAchievementsView();
   }
+  updateSystemActionLock();
 }
 
 function setTimelineFilter(filter) {
@@ -4235,7 +5675,7 @@ function renderAchievementsView() {
     const card = document.createElement("article");
     card.className = `achievement-card ${achievement.unlocked ? "unlocked" : "locked"} rarity-${achievement.rarity.toLowerCase()}`;
     card.innerHTML = `
-      <div class="achievement-icon">${iconMarkup(achievement.unlocked ? "trophy" : "diamond")}</div>
+      <div class="achievement-icon">${achievement.unlocked ? "🏆" : "◆"}</div>
       <div>
         <div class="achievement-card-top">
           <span>${achievement.category}</span>
@@ -4252,7 +5692,9 @@ function renderAchievementsView() {
 
 function renderRunsView() {
   const history = loadRunHistory();
-  const activeRun = state.runId ? currentRunSnapshot("active") : readStorageJson(currentRunStorageKey, null);
+  const activeRun = !isArchiveOnlyView && state.runId
+    ? currentRunSnapshot("active")
+    : readStorageJson(currentRunStorageKey, null);
   const runs = activeRun
     ? [activeRun, ...history.filter((run) => run.id !== activeRun.id)]
     : history;
@@ -4305,7 +5747,7 @@ function endingRank(run) {
 }
 
 function renderRunCompareControls(history) {
-  const options = history.map((run) => `<option value="${run.id}">${escapeHTML(run.name)} · ${run.score || 0} pts</option>`).join("");
+  const options = history.map((run) => `<option value="${escapeHTML(run.id)}">${escapeHTML(run.name)} · ${run.score || 0} pts</option>`).join("");
   const emptyOption = `<option value="">Select run</option>`;
   compareRunA.innerHTML = emptyOption + options;
   compareRunB.innerHTML = emptyOption + options;
@@ -4354,12 +5796,14 @@ function renderRunHistoryList(runs) {
   runs.forEach((run) => {
     const card = document.createElement("article");
     const isLiveRun = state.runId === run.id && run.status === "active";
-    card.className = `run-card status-${run.status}`;
+    const safeRunId = escapeHTML(run.id);
+    const safeRunStatus = escapeHTML(run.status);
+    card.className = `run-card status-${String(run.status || "active").replace(/[^a-z-]/gi, "")}`;
     card.dataset.runId = run.id;
     card.innerHTML = `
       <div class="run-card-top">
         <div>
-          <span class="status-badge">${run.status}</span>
+          <span class="status-badge">${safeRunStatus}</span>
           <h3>${escapeHTML(run.name)}</h3>
           <p>${escapeHTML(startupTypes[run.startupType]?.label || run.startupType)} · ${escapeHTML(founderStyles[run.founderStyle]?.label || run.founderStyle)} · ${escapeHTML(goals[run.goal]?.label || run.goal)}</p>
         </div>
@@ -4376,9 +5820,9 @@ function renderRunHistoryList(runs) {
         <p>${(run.timelineSummary || []).map(escapeHTML).join("</p><p>") || "No timeline summary saved."}</p>
       </div>
       <div class="run-actions">
-        <button type="button" data-run-action="view" data-run-id="${run.id}">View Summary</button>
-        <button type="button" data-run-action="restart" data-run-id="${run.id}">Restart Setup</button>
-        ${isLiveRun ? "" : `<button type="button" data-run-action="delete" data-run-id="${run.id}">Delete</button>`}
+        <button type="button" data-run-action="view" data-run-id="${safeRunId}">View Summary</button>
+        <button type="button" data-run-action="restart" data-run-id="${safeRunId}">Restart Setup</button>
+        ${isLiveRun ? "" : `<button type="button" data-run-action="delete" data-run-id="${safeRunId}">Delete</button>`}
       </div>
     `;
     runHistoryList.append(card);
@@ -4421,7 +5865,7 @@ function handleRunHistoryAction(event) {
     saveRunHistory(history.filter((item) => item.id !== id));
     const current = readStorageJson(currentRunStorageKey, null);
     if (current?.id === id) {
-      localStorage.removeItem(currentRunStorageKey);
+      removeStorageItem(currentRunStorageKey);
     }
     renderRunsView();
     showRunMessage("Run deleted");
@@ -4486,6 +5930,8 @@ function renderTeamView() {
   teamRolesList.innerHTML = "";
   Object.entries(teamRoles).forEach(([role, config]) => {
     const count = state.team.roles[role];
+    const roleLocked = state.team.lastRoleActionWeek?.[role] === state.week || !canSpendFocus(2);
+    const fireLocked = roleLocked || count <= 0 || teamSize <= 1;
     const row = document.createElement("article");
     row.className = "team-role-row";
     row.innerHTML = `
@@ -4497,8 +5943,8 @@ function renderTeamView() {
       </div>
       <div class="role-count">${count}</div>
       <div class="role-actions">
-        <button type="button" data-action="hire" data-role="${role}">Hire</button>
-        <button type="button" data-action="fire" data-role="${role}">Fire</button>
+        <button type="button" data-action="hire" data-role="${role}" ${roleLocked ? "disabled" : ""} title="Uses 2 Focus">Hire · 2F</button>
+        <button type="button" data-action="fire" data-role="${role}" ${fireLocked ? "disabled" : ""} title="Uses 2 Focus">Fire · 2F</button>
       </div>
     `;
     teamRolesList.append(row);
@@ -4523,99 +5969,55 @@ function getTeamStrengths() {
 function renderProductView() {
   if (!state.product) return;
 
-  ensureProductPortfolioState();
-  const product = activeProduct();
-  const roadmap = activeProductRoadmap();
-  if (!product) return;
-  const health = productHealthFor(product);
+  const health = productHealth();
   productStatusLine.textContent = health === "Excellent"
-    ? `${product.name} is compounding trust and growth.`
+    ? "Product is compounding trust and growth."
     : health === "Healthy"
-      ? `${product.name} health is stable.`
+      ? "Product health is stable."
       : health === "Fragile"
-        ? `${product.name} is fragile. Bugs and debt can slow growth.`
-        : `${product.name} is broken. Stabilize before scaling.`;
+        ? "Product is fragile. Bugs and debt can slow growth."
+        : "Product is broken. Stabilize before scaling.";
   productHealthBadge.textContent = health;
   productHealthBadge.className = `health-${health.toLowerCase()}`;
-  setProductMetric(productQualityStat, productQualityBar, product.productQuality, false);
-  setProductMetric(productStabilityStat, productStabilityBar, product.stability, false);
-  setProductMetric(productUxStat, productUxBar, product.ux, false);
-  setProductMetric(productFeatureStat, productFeatureBar, product.featureDepth, false);
-  setProductMetric(productDebtStat, productDebtBar, product.technicalDebt, true);
-  renderMonetizationSummary(productMonetizationModel, productMonetizationPrice, productMonetizationNote, product);
-  productActionMessage.textContent = product.message || state.product.message;
+  setProductMetric(productQualityStat, productQualityBar, state.productQuality, false);
+  setProductMetric(productStabilityStat, productStabilityBar, state.product.stability, false);
+  setProductMetric(productUxStat, productUxBar, state.product.ux, false);
+  setProductMetric(productFeatureStat, productFeatureBar, state.product.featureDepth, false);
+  setProductMetric(productDebtStat, productDebtBar, state.product.technicalDebt, true);
+  renderMonetizationSummary(productMonetizationModel, productMonetizationPrice, productMonetizationNote);
+  productActionMessage.textContent = state.product.message;
 
   productUpgradeList.innerHTML = "";
-  const fullCapacity = roadmap.inProgress.length >= 2;
+  const fullCapacity = state.product.roadmap.inProgress.length >= 2;
   Object.entries(productUpgrades).forEach(([key, upgrade]) => {
     const card = document.createElement("article");
-    const runningItem = roadmap.inProgress.find((item) => item.key === key);
-    const alreadyRunning = Boolean(runningItem);
-    const progressMeta = runningItem ? upgradeProgressMeta(runningItem) : null;
-    card.className = `product-upgrade-card${alreadyRunning ? " is-running" : ""}`;
-    card.style.setProperty("--upgrade-progress", `${progressMeta?.progress || 0}%`);
+    card.className = "product-upgrade-card";
+    const alreadyRunning = state.product.roadmap.inProgress.some((item) => item.key === key);
     const workUnits = effectiveWorkUnits(key);
     card.innerHTML = `
-      <span class="upgrade-fill" aria-hidden="true"></span>
-      <div class="upgrade-icon" aria-hidden="true">${iconMarkup(productUpgradeIcons[key])}</div>
-      <div class="upgrade-copy">
+      <div>
         <strong>${upgrade.label}</strong>
         <span>${upgrade.impact}</span>
-        <div class="upgrade-meta">
-          <em>${formatMoney(upgrade.cost)}</em>
-          <em>${workUnits} work</em>
-        </div>
-        ${progressMeta ? `
-          <div class="upgrade-progress-details">
-            <b>${progressMeta.progress}%</b>
-            <small>${progressMeta.remaining} work left · ~${progressMeta.weeksLeft} week${progressMeta.weeksLeft === 1 ? "" : "s"} remaining</small>
-          </div>
-        ` : ""}
+        <em>${formatMoney(upgrade.cost)} · ${workUnits} work</em>
       </div>
-      <button type="button" data-upgrade="${key}" ${fullCapacity || alreadyRunning ? "disabled" : ""}>${alreadyRunning ? "In Progress" : "Start"}</button>
+      <button type="button" data-upgrade="${key}" ${fullCapacity || alreadyRunning || !canSpendFocus(1) ? "disabled" : ""} title="Uses 1 Focus">${alreadyRunning ? "In Progress" : "Start · 1F"}</button>
     `;
     productUpgradeList.append(card);
   });
 
-  renderRoadmapList(roadmapBacklog, roadmap.backlog);
-  renderRoadmapList(roadmapProgress, roadmap.inProgress);
-  renderRoadmapList(roadmapShipped, roadmap.shipped.slice(0, 6));
+  renderRoadmapList(roadmapBacklog, state.product.roadmap.backlog);
+  renderRoadmapList(roadmapProgress, state.product.roadmap.inProgress);
+  renderRoadmapList(roadmapShipped, state.product.roadmap.shipped.slice(0, 6));
   renderProductPortfolio();
-}
-
-function upgradeProgressMeta(item) {
-  const progress = clamp(Math.round(((item.workTotal - item.workRemaining) / item.workTotal) * 100), 0, 100);
-  const activeWorkCount = (state.product?.products || []).reduce((sum, product) => sum + normalizeProductRoadmap(product.roadmap).inProgress.length, 0);
-  const perWeek = Math.max(0.5, calculateDevCapacity() / Math.max(1, activeWorkCount));
-  const weeksLeft = Math.max(1, Math.ceil(item.workRemaining / perWeek));
-  return {
-    progress,
-    remaining: Number(item.workRemaining.toFixed(1)),
-    weeksLeft,
-  };
-}
-
-function upgradeKeyFromLabel(label) {
-  if (!label) return "";
-  return Object.entries(productUpgrades).find(([, upgrade]) => upgrade.label === label)?.[0] || "";
-}
-
-function parseShippedUpgrade(item) {
-  const text = String(item);
-  const match = text.match(/^Week\s+(\d+):\s+(.+)$/);
-  const label = match ? match[2] : text;
-  return {
-    label,
-    week: match ? match[1] : "",
-    key: upgradeKeyFromLabel(label),
-  };
 }
 
 function renderProductPortfolio() {
   if (!productPortfolioList || !state.product?.products) return;
-  ensureProductPortfolioState();
-  const selectedId = activeProduct()?.id;
   productPortfolioList.innerHTML = "";
+  const activeProductCount = activeProducts().length;
+  const priceChangedThisWeek = state.monetization?.lastPriceChangeWeek === state.week;
+  const hasOneFocus = canSpendFocus(1);
+  const hasTwoFocus = canSpendFocus(2);
 
   if (state.product.products.length === 0) {
     const empty = document.createElement("article");
@@ -4626,19 +6028,20 @@ function renderProductPortfolio() {
   }
 
   state.product.products.forEach((product) => {
-    const modelKey = product.pricingModel || "freemium";
+    const modelKey = state.monetization?.pricingModel || product.pricingModel;
     const model = pricingModels[modelKey] || pricingModels.freemium;
-    const price = product.price ?? model.basePrice;
-    const isSelected = product.id === selectedId;
+    const price = state.monetization?.price ?? product.price;
+    const pauseLocked = product.active && activeProductCount <= 1;
+    const managementLocked = product.lastManagedWeek === state.week;
     const card = document.createElement("article");
-    card.className = `product-entity-card ${product.active ? "" : "paused"} ${isSelected ? "is-active-product" : ""}`;
+    card.className = `product-entity-card ${product.active ? "" : "paused"}`;
     card.innerHTML = `
       <div class="product-entity-top">
         <div>
-          <span>${product.type} · ${product.targetSegment}</span>
-          <h3>${product.name}</h3>
+          <span>${escapeHTML(product.type)} · ${escapeHTML(product.targetSegment)}</span>
+          <h3>${escapeHTML(product.name)}</h3>
         </div>
-        <mark>${isSelected ? "Selected" : product.active ? "Active" : "Paused"}</mark>
+        <mark>${product.active ? "Active" : "Paused"}</mark>
       </div>
       <div class="product-entity-stats">
         <span><b>${product.users.toLocaleString()}</b> users</span>
@@ -4655,12 +6058,11 @@ function renderProductPortfolio() {
         <label>Debt <i>${product.technicalDebt}</i><div class="meter"><span class="${product.technicalDebt > 65 ? "bar-danger" : product.technicalDebt > 42 ? "bar-risk" : "bar-good"}" style="width:${product.technicalDebt}%"></span></div></label>
       </div>
       <div class="product-entity-actions">
-        <button type="button" data-product-action="select" data-product-id="${product.id}" ${isSelected ? "disabled" : ""}>${isSelected ? "Selected" : "Select"}</button>
-        <button type="button" data-product-action="upgrade" data-product-id="${product.id}">Upgrade</button>
-        <button type="button" data-product-action="priceUp" data-product-id="${product.id}" ${modelKey === "free" ? "disabled" : ""}>Price +</button>
-        <button type="button" data-product-action="priceDown" data-product-id="${product.id}" ${modelKey === "free" ? "disabled" : ""}>Price -</button>
-        <button type="button" data-product-action="pivot" data-product-id="${product.id}">Pivot</button>
-        <button type="button" data-product-action="toggle" data-product-id="${product.id}">${product.active ? "Pause" : "Resume"}</button>
+        <button type="button" data-product-action="upgrade" data-product-id="${product.id}" ${managementLocked || !hasOneFocus ? "disabled" : ""} title="Uses 1 Focus">Upgrade · 1F</button>
+        <button type="button" data-product-action="priceUp" data-product-id="${product.id}" ${modelKey === "free" || managementLocked || priceChangedThisWeek || !hasOneFocus ? "disabled" : ""} title="Uses 1 Focus">Price + · 1F</button>
+        <button type="button" data-product-action="priceDown" data-product-id="${product.id}" ${modelKey === "free" || managementLocked || priceChangedThisWeek || !hasOneFocus ? "disabled" : ""} title="Uses 1 Focus">Price - · 1F</button>
+        <button type="button" data-product-action="pivot" data-product-id="${product.id}" ${managementLocked || !hasTwoFocus ? "disabled" : ""} title="Uses 2 Focus">Pivot · 2F</button>
+        <button type="button" data-product-action="toggle" data-product-id="${product.id}" ${pauseLocked || managementLocked || !hasOneFocus ? "disabled" : ""} ${pauseLocked ? "title=\"At least one product must stay active\"" : "title=\"Uses 1 Focus\""}>${pauseLocked ? "Required" : product.active ? "Pause · 1F" : "Resume · 1F"}</button>
       </div>
     `;
     productPortfolioList.append(card);
@@ -4678,12 +6080,11 @@ function priceBadgeClass(product) {
   return "price-too-expensive";
 }
 
-function renderMonetizationSummary(modelElement, priceElement, noteElement, product = activeProduct()) {
-  if (!modelElement) return;
-  const modelKey = product?.pricingModel || state.monetization?.pricingModel || "freemium";
-  const model = pricingModels[modelKey] || pricingModels.freemium;
+function renderMonetizationSummary(modelElement, priceElement, noteElement) {
+  if (!state.monetization || !modelElement) return;
+  const model = pricingModels[state.monetization.pricingModel] || pricingModels.freemium;
   modelElement.textContent = model.label;
-  priceElement.textContent = formatMoney(product?.price ?? state.monetization?.price ?? model.basePrice);
+  priceElement.textContent = formatMoney(state.monetization.price);
   noteElement.textContent = monetizationNote();
 }
 
@@ -4730,14 +6131,19 @@ function renderMarketView() {
 
 function renderMarketChoices(container, kind, options) {
   container.innerHTML = "";
+  const changedThisWeek = state.market?.lastChoiceWeek?.[kind] === state.week
+    || (kind === "pricing" && state.monetization?.lastPriceChangeWeek === state.week);
   Object.entries(options).forEach(([key, option]) => {
     const button = document.createElement("button");
     const activeKey = kind === "pricing" ? state.monetization.pricingModel : state.market[kind];
     button.className = `market-choice ${activeKey === key ? "active" : ""}`;
     button.type = "button";
+    const focusCost = kind === "positioning" ? 1 : 2;
+    button.disabled = changedThisWeek || !canSpendFocus(focusCost);
+    button.title = `Uses ${focusCost} Focus`;
     button.dataset.marketKind = kind;
     button.dataset.marketKey = key;
-    button.innerHTML = `<i>${option.icon}</i><strong>${option.label}</strong><span>${option.note}</span>`;
+    button.innerHTML = `<i>${option.icon}</i><strong>${option.label} · ${focusCost}F</strong><span>${option.note}</span>`;
     container.append(button);
   });
 }
@@ -4745,6 +6151,8 @@ function renderMarketChoices(container, kind, options) {
 function renderMarketActions() {
   marketActionList.innerHTML = "";
   Object.entries(marketActions).forEach(([key, action]) => {
+    const usedThisWeek = state.market.actionLastUsedWeek?.[key] === state.week;
+    const focusCost = key === "nicheCampaign" ? 2 : 1;
     const card = document.createElement("article");
     card.className = "market-action-card";
     card.innerHTML = `
@@ -4753,7 +6161,7 @@ function renderMarketActions() {
         <span>${action.impact}</span>
         <em>${formatMoney(action.cost)}</em>
       </div>
-      <button type="button" data-market-action="${key}">Run</button>
+      <button type="button" data-market-action="${key}" ${usedThisWeek || !canSpendFocus(focusCost) ? "disabled" : ""} title="Uses ${focusCost} Focus">${usedThisWeek ? "Done" : `Run · ${focusCost}F`}</button>
     `;
     marketActionList.append(card);
   });
@@ -4785,10 +6193,8 @@ function setProductMetric(statElement, barElement, value, inverse) {
 
 function renderRoadmapList(element, items) {
   element.innerHTML = "";
-  const isShippedList = element === roadmapShipped;
   if (items.length === 0) {
     const empty = document.createElement("li");
-    empty.className = "roadmap-empty";
     empty.textContent = "Empty";
     element.append(empty);
     return;
@@ -4796,40 +6202,16 @@ function renderRoadmapList(element, items) {
   items.forEach((item) => {
     const li = document.createElement("li");
     if (typeof item === "object") {
-      const progressMeta = upgradeProgressMeta(item);
-      li.className = "roadmap-task roadmap-task-progress";
-      li.style.setProperty("--task-progress", `${progressMeta.progress}%`);
+      const progress = clamp(Math.round(((item.workTotal - item.workRemaining) / item.workTotal) * 100), 0, 100);
+      const perWeek = Math.max(0.5, calculateDevCapacity() / Math.max(1, state.product.roadmap.inProgress.length));
+      const weeksLeft = Math.max(1, Math.ceil(item.workRemaining / perWeek));
       li.innerHTML = `
-        <span class="roadmap-fill" aria-hidden="true"></span>
-        <i aria-hidden="true">${iconMarkup(productUpgradeIcons[item.key])}</i>
-        <div>
-          <strong>${item.label}</strong>
-          <div class="roadmap-progress"><span style="width:${progressMeta.progress}%"></span></div>
-          <small>${progressMeta.progress}% · ${progressMeta.remaining} work left · ~${progressMeta.weeksLeft} week${progressMeta.weeksLeft === 1 ? "" : "s"} remaining</small>
-        </div>
+        <strong>${item.label}</strong>
+        <div class="roadmap-progress"><span style="width:${progress}%"></span></div>
+        <small>${item.workRemaining} / ${item.workTotal} work remaining · ~${weeksLeft} week${weeksLeft === 1 ? "" : "s"} left</small>
       `;
     } else {
-      const shipped = parseShippedUpgrade(item);
-      if (isShippedList) {
-        li.className = "roadmap-task roadmap-task-shipped";
-        li.innerHTML = `
-          <i aria-hidden="true">${iconMarkup("check")}</i>
-          <div>
-            <strong>${iconMarkup(productUpgradeIcons[shipped.key])} ${shipped.label}</strong>
-            <small>${shipped.week ? `Completed week ${shipped.week}` : "Completed"}</small>
-          </div>
-        `;
-      } else {
-        const key = upgradeKeyFromLabel(String(item));
-        li.className = "roadmap-task roadmap-task-backlog";
-        li.innerHTML = `
-          <i aria-hidden="true">${iconMarkup(productUpgradeIcons[key])}</i>
-          <div>
-            <strong>${item}</strong>
-            <small>Waiting for capacity</small>
-          </div>
-        `;
-      }
+      li.textContent = item;
     }
     element.append(li);
   });
@@ -5025,6 +6407,10 @@ function updateHudMeters(runwayWeeks, runwayPercent) {
   setHudMeter(reputationStatPill, state.reputation, state.reputation < 35 ? "danger" : state.reputation < 60 ? "risk" : "good");
   setHudMeter(growthStatPill, growthPercent, state.growthRate < 0 ? "danger" : state.growthRate < 6 ? "risk" : "good");
   setHudMeter(streakStatPill, streakPercent, state.streak > 0 ? "good" : "neutral");
+  if (focusStatPill) {
+    const focusPercent = weeklyFocusMax() > 0 ? focusRemaining() / weeklyFocusMax() * 100 : 0;
+    setHudMeter(focusStatPill, focusPercent, focusRemaining() === 0 ? "risk" : "good");
+  }
 }
 
 function renderBurnSources() {
@@ -5034,12 +6420,44 @@ function renderBurnSources() {
   burnProductSource.textContent = formatMoney(sources.product);
   burnMarketingSource.textContent = formatMoney(sources.marketing);
   burnOptionalSource.textContent = formatMoney(sources.optional);
-  stopMarketingButton.disabled = sources.marketing <= 0;
-  pauseDevelopmentButton.disabled = state.economy?.developmentPausedWeeks > 0;
-  cutCostsButton.disabled = false;
+  if (burnScaleSource) burnScaleSource.textContent = formatMoney(sources.scale);
+  const actionsLocked = !canUseSystemActions();
+  stopMarketingButton.disabled = actionsLocked || sources.marketing <= 0;
+  stopMarketingButton.disabled ||= !canSpendFocus(1);
+  stopMarketingButton.title = "Uses 1 Focus";
+  pauseDevelopmentButton.disabled = actionsLocked || state.economy?.developmentPausedWeeks > 0 || !canSpendFocus(1);
+  pauseDevelopmentButton.title = "Uses 1 Focus";
+  cutCostsButton.disabled = actionsLocked
+    || state.economy?.lastCostCutWeek === state.week
+    || sources.optional + sources.marketing <= 0
+    || !canSpendFocus(1);
+  cutCostsButton.title = "Uses 1 Focus";
   burnSourceNote.textContent = state.economy?.developmentPausedWeeks > 0
     ? `Development paused for ${state.economy.developmentPausedWeeks} week${state.economy.developmentPausedWeeks === 1 ? "" : "s"}. Product maintenance is reduced, but shipping is slow.`
-    : "Burn comes from team payroll, product maintenance, and explicit optional spend.";
+    : `Burn includes ${formatMoney(sources.overhead)} stage overhead and ${formatMoney(sources.cogs)} usage/COGS at your current scale.`;
+  if (burnStatPill) {
+    burnStatPill.title = `Team ${formatMoney(sources.team)} · Product ${formatMoney(sources.product)} · Scale/COGS ${formatMoney(sources.scale)} · Marketing ${formatMoney(sources.marketing)} · Optional ${formatMoney(sources.optional)}`;
+  }
+}
+
+function updateSystemActionLock() {
+  if (!simulationPage) return;
+  const locked = !canUseSystemActions();
+  if (createProductButton) {
+    createProductButton.disabled = locked || !canSpendFocus(2);
+    createProductButton.title = "Uses 2 Focus";
+  }
+  if (saveRunButton) saveRunButton.disabled = isAdvancingWeek || isArchiveOnlyView;
+  if (newRunButton) newRunButton.disabled = isAdvancingWeek;
+  if (restartButton) restartButton.disabled = isAdvancingWeek;
+  if (locked) {
+    simulationPage.querySelectorAll(
+      "button[data-action], button[data-upgrade], button[data-product-action], button[data-market-kind], button[data-market-action]",
+    ).forEach((button) => {
+      button.disabled = true;
+    });
+  }
+  if (continueWeekButton) continueWeekButton.disabled = isAdvancingWeek;
 }
 
 function recordSystemAction({ before, title, decision, insight, type = "Founder Note" }) {
@@ -5048,7 +6466,7 @@ function recordSystemAction({ before, title, decision, insight, type = "Founder 
   const outcome = classifyOutcome(delta);
   state.lastDelta = delta;
   state.lastInsight = insight;
-  state.history.push({
+  appendHistoryEntry({
     week: state.week,
     title,
     decision,
@@ -5082,7 +6500,13 @@ function renderGuidedTip() {
     2: "Week 2 guide: growth is good, but do not ignore quality.",
     3: "Week 3 guide: watch burn and runway before spending hard.",
   };
-  const tip = tips[state.week];
+  const pressure = Number(state.balance?.pressure) || 0;
+  const pressureLabel = pressure >= 80 ? "Critical" : pressure >= 60 ? "High" : pressure >= 35 ? "Managed" : "Low";
+  const readiness = state.company?.readiness;
+  const distressWarning = (Number(state.balance?.criticalWeeks) || 0) > 0
+    ? ` Distress warning ${state.balance.criticalWeeks}/3: resolve critical risks before the company collapses.`
+    : "";
+  const tip = tips[state.week] || `Operating pressure: ${pressureLabel} (${pressure}). ${readiness && nextCompanyStage() ? `Promotion readiness: ${readiness.weeksHeld || 0}/${stageReadinessRequirements[readiness.targetStageIndex]?.holdWeeks || 0} healthy weeks.` : "Protect product health, morale, and runway as you scale."}${distressWarning}`;
   guidedTip.textContent = tip || "";
   guidedTip.classList.toggle("is-hidden", !tip);
 }
@@ -5095,10 +6519,13 @@ function calculateRunwayWeeks() {
 }
 
 function stopMarketingSpend() {
+  if (!canUseSystemActions()) return;
   if (!state.economy || state.economy.marketingSpend <= 0) return;
+  if (!canSpendFocus(1)) return;
   const before = captureStats();
+  spendFocus(1);
   state.economy.marketingSpend = 0;
-  state.growthRate = clamp(state.growthRate - 2, -35, 80);
+  state.growthRate = clamp(state.growthRate - 2, -35, MAX_GROWTH_RATE);
   state.team.morale = clamp(state.team.morale + 1, 0, 100);
   recalculateDerivedState();
   recordSystemAction({
@@ -5112,11 +6539,14 @@ function stopMarketingSpend() {
 }
 
 function pauseProductDevelopment() {
+  if (!canUseSystemActions()) return;
   ensureEconomyState();
   if (state.economy.developmentPausedWeeks > 0) return;
+  if (!canSpendFocus(1)) return;
   const before = captureStats();
+  spendFocus(1);
   state.economy.developmentPausedWeeks = 3;
-  state.growthRate = clamp(state.growthRate - 1, -35, 80);
+  state.growthRate = clamp(state.growthRate - 1, -35, MAX_GROWTH_RATE);
   state.team.morale = clamp(state.team.morale - 2, 0, 100);
   recalculateDerivedState();
   recordSystemAction({
@@ -5130,20 +6560,37 @@ function pauseProductDevelopment() {
 }
 
 function cutOperatingCosts() {
+  if (!canUseSystemActions()) return;
   ensureEconomyState();
+  const reducibleCosts = Math.round((state.economy.optionalExpenses || 0) + (state.economy.marketingSpend || 0));
+  if (state.economy.lastCostCutWeek === state.week || reducibleCosts <= 0) {
+    state.team.message = state.economy.lastCostCutWeek === state.week
+      ? "Costs were already cut this week. Advance time before renegotiating again."
+      : "There are no optional or marketing costs left to cut.";
+    renderTeamView();
+    renderBurnSources();
+    return;
+  }
+  if (!canSpendFocus(1)) {
+    state.team.message = "Cutting operating costs needs 1 Focus.";
+    renderTeamView();
+    renderBurnSources();
+    return;
+  }
   const before = captureStats();
+  spendFocus(1);
   state.economy.optionalExpenses = Math.max(0, Math.round((state.economy.optionalExpenses || 0) * 0.45));
   state.economy.marketingSpend = Math.max(0, Math.round((state.economy.marketingSpend || 0) * 0.55));
+  state.economy.lastCostCutWeek = state.week;
   state.team.morale = clamp(state.team.morale - 4, 0, 100);
   state.reputation = clamp(state.reputation - 1, 0, 100);
-  state.growthRate = clamp(state.growthRate - 2, -35, 80);
-  state.cash = Math.round(state.cash + 120);
+  state.growthRate = clamp(state.growthRate - 2, -35, MAX_GROWTH_RATE);
   recalculateDerivedState();
   recordSystemAction({
     before,
     title: "Emergency cost cuts",
     decision: "Cut Costs",
-    insight: "You renegotiated tools and paused non-essential spend. Runway improves, but morale and growth take a short-term hit.",
+    insight: "You renegotiated real optional costs. Runway improves, but morale and growth take a short-term hit, and this action cannot repeat until next week.",
     type: "Failure Risk",
   });
   render();
@@ -5229,17 +6676,19 @@ function decisionPreview(effects = {}) {
   const normalized = normalizeEffects(effects);
   const preview = [];
   if (normalized.users) preview.push(formatShortChange(normalized.users, "users"));
+  if (normalized.revenue) preview.push(formatShortChange(normalized.revenue, "revenue"));
   if (normalized.cash) preview.push(formatShortChange(normalized.cash, "cash"));
+  if (normalized.burnRate) preview.push(formatShortChange(normalized.burnRate, "burn"));
   if (normalized.reputation) preview.push(formatShortChange(normalized.reputation, "rep"));
   if (normalized.productQuality) preview.push(formatShortChange(normalized.productQuality, "quality"));
   if (normalized.growthRate) preview.push(formatShortChange(normalized.growthRate, "growth"));
-  return preview.slice(0, 3).join(" · ");
+  return preview.slice(0, 4).join(" · ");
 }
 
 function formatShortChange(value, label) {
   const prefix = value > 0 ? "+" : "";
-  if (label === "cash") {
-    return `${prefix}${formatMoney(value)}`;
+  if (label === "cash" || label === "revenue" || label === "burn") {
+    return `${prefix}${formatMoney(value)} ${label}`;
   }
   if (label === "growth") {
     return `${prefix}${value}% ${label}`;
@@ -5251,6 +6700,12 @@ function formatMoney(value) {
   const absValue = Math.abs(value);
   const prefix = value < 0 ? "-" : "";
 
+  if (absValue >= 1000000000000) {
+    return `${prefix}$${(absValue / 1000000000000).toFixed(1)}T`;
+  }
+  if (absValue >= 1000000000) {
+    return `${prefix}$${(absValue / 1000000000).toFixed(1)}B`;
+  }
   if (absValue >= 1000000) {
     return `${prefix}$${(absValue / 1000000).toFixed(1)}M`;
   }
@@ -5260,19 +6715,30 @@ function formatMoney(value) {
   return `${prefix}$${absValue.toLocaleString()}`;
 }
 
-function createSeededRandom(seedText) {
+function createSeededRandom(seedText, restoredCalls = 0) {
+  rngSeedText = String(seedText || "launchlab");
   let seed = 2166136261;
-  for (let index = 0; index < seedText.length; index += 1) {
-    seed ^= seedText.charCodeAt(index);
+  for (let index = 0; index < rngSeedText.length; index += 1) {
+    seed ^= rngSeedText.charCodeAt(index);
     seed = Math.imul(seed, 16777619);
   }
 
-  return function random() {
+  function nextValue() {
     seed += 0x6d2b79f5;
     let value = seed;
     value = Math.imul(value ^ (value >>> 15), value | 1);
     value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
     return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  }
+
+  rngCalls = Math.max(0, Math.floor(restoredCalls));
+  for (let index = 0; index < rngCalls; index += 1) {
+    nextValue();
+  }
+
+  return function random() {
+    rngCalls += 1;
+    return nextValue();
   };
 }
 
@@ -5286,6 +6752,11 @@ function randomIndex(length) {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function finiteGameNumber(value, fallback = 0, min = -MAX_SAFE_GAME_VALUE, max = MAX_SAFE_GAME_VALUE) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? clamp(parsed, min, max) : fallback;
 }
 
 function getAudioContext() {
@@ -5388,6 +6859,7 @@ function showOnboardingOnFirstVisit() {
 }
 
 function openNewRunConfirm() {
+  if (isAdvancingWeek) return;
   if (!state.runId) {
     resetToLanding();
     return;
@@ -5401,36 +6873,48 @@ function closeNewRunConfirm() {
 }
 
 function abandonCurrentRun() {
+  if (isArchiveOnlyView) return;
   if (state.runId && !endingPage.classList.contains("is-hidden")) {
     return;
   }
   if (state.runId) {
     persistCurrentRun("abandoned", { includeHistory: true });
+    clearFullGameState();
   }
 }
 
 function confirmStartNewRun() {
+  if (isAdvancingWeek) return;
   abandonCurrentRun();
   closeNewRunConfirm();
   resetToLanding();
 }
 
 function saveAndStartNewRun() {
+  if (isAdvancingWeek) return;
   const current = readStorageJson(currentRunStorageKey, null);
   if (current?.id) {
-    upsertRunHistory(current);
+    upsertRunHistory({
+      ...current,
+      status: current.status === "active" ? "abandoned" : current.status,
+      endedAt: current.endedAt || new Date().toISOString(),
+    });
   }
+  clearFullGameState();
   resetToLanding();
 }
 
 function viewRunHistoryFromEnding() {
+  isArchiveOnlyView = true;
   endingPage.classList.add("is-hidden");
   landingPage.classList.add("is-hidden");
   simulationPage.classList.remove("is-hidden");
   setCenterView("runs");
+  updateSystemActionLock();
 }
 
 function restartCurrentRun() {
+  if (isAdvancingWeek) return;
   abandonCurrentRun();
   const formData = new FormData();
   formData.set("idea", startup.idea || "New startup");
@@ -5443,12 +6927,16 @@ function restartCurrentRun() {
 }
 
 function resetToLanding() {
+  if (isAdvancingWeek) return;
+  cancelPendingWeekAdvance();
+  isArchiveOnlyView = false;
   simulationPage.classList.add("is-hidden");
   endingPage.classList.add("is-hidden");
   newRunOverlay.classList.add("is-hidden");
   closeSettingsMenu();
   landingPage.classList.remove("is-hidden");
   startupForm.reset();
+  renderContinueRunPanel();
   document.querySelector("#ideaInput").focus();
 }
 
@@ -5504,6 +6992,7 @@ productUpgradeList.addEventListener("click", (event) => {
 });
 
 createProductButton.addEventListener("click", () => {
+  if (!canUseSystemActions()) return;
   createProductForm.classList.toggle("is-hidden");
   if (!createProductForm.classList.contains("is-hidden")) {
     createProductForm.querySelector("input")?.focus();
@@ -5543,7 +7032,9 @@ runHistoryList.addEventListener("click", handleRunHistoryAction);
 compareRunA.addEventListener("change", renderRunComparison);
 compareRunB.addEventListener("change", renderRunComparison);
 continueWeekButton.addEventListener("click", continueToNextWeek);
-restartButton.addEventListener("click", resetToLanding);
+aiEventsButton?.addEventListener("click", toggleAIEvents);
+continueSavedRunButton?.addEventListener("click", resumeSavedRun);
+restartButton.addEventListener("click", openNewRunConfirm);
 saveRunButton.addEventListener("click", manualSaveRun);
 newRunButton.addEventListener("click", openNewRunConfirm);
 stopMarketingButton.addEventListener("click", stopMarketingSpend);
@@ -5588,4 +7079,5 @@ document.addEventListener("click", (event) => {
 });
 
 setTheme("dark");
+renderContinueRunPanel();
 showOnboardingOnFirstVisit();
