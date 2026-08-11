@@ -9026,6 +9026,24 @@ textarea:focus-visible,
     min-height: 48px;
   }
 
+  .decision-result-changes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+
+  .decision-result-changes > b {
+    width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+    overflow: hidden;
+    padding: 5px 8px;
+    font-size: 0.7rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   #overviewView:has(.decision-result-panel:not(.is-hidden)) {
     padding-bottom: 170px;
   }
@@ -9237,14 +9255,59 @@ textarea:focus-visible,
     overscroll-behavior: contain;
   }
 
-  .promotion-toast,
   .result-toast,
   .achievement-toast {
+    top: auto;
     right: 10px;
     bottom: calc(76px + env(safe-area-inset-bottom));
     left: 10px;
     width: auto;
     max-width: none;
+    min-width: 0;
+    pointer-events: none;
+    transform: none;
+  }
+
+  .result-toast {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 10px;
+    animation: mobile-toast-pop 220ms ease both;
+  }
+
+  .result-toast > span {
+    min-width: 0;
+    overflow: hidden;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body:has(.result-toast:not(.is-hidden)) .achievement-toast:not(.is-hidden) {
+    bottom: calc(164px + env(safe-area-inset-bottom));
+  }
+
+  .promotion-toast {
+    top: calc(10px + env(safe-area-inset-top));
+    right: 10px;
+    bottom: auto;
+    left: 10px;
+    width: auto;
+    max-width: none;
+    pointer-events: none;
+    transform: none;
+  }
+}
+
+@keyframes mobile-toast-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

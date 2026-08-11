@@ -6246,7 +6246,7 @@ function formatDelta(delta) {
     formatChange(delta.marketDemand, "demand"),
     formatChange(delta.differentiation, "diff"),
     formatChange(delta.teamMorale, "morale"),
-  ].filter(Boolean).join(" · ");
+  ].filter(Boolean).join("");
 }
 
 function formatPlainDelta(delta) {
