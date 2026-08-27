@@ -400,7 +400,3 @@ The project turns concepts such as runway, product-market fit, pricing power, te
 If a run fails, that is part of the design. Read the timeline, find the constraint you ignored, and launch again with a better theory.
 
 ---
-
-<p align="center">
-  <strong>Build carefully. Grow deliberately. Survive long enough to become dangerous.</strong>
-</p>
